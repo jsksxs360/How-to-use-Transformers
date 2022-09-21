@@ -6,6 +6,9 @@ __pycache__/
 # MacOS
 .DS_Store
 
+# Dataset
+data/FashionMNIST/
+
 # C extensions
 *.so
 

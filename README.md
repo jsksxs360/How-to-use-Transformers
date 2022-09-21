@@ -27,4 +27,4 @@
 
 ## Demo 一览
 
-- [pairwise_cls_similarity_afqmc]()：句子对分类任务，[金融同义句判断](https://xiaosheng.run/2021/12/17/transformers-note-4.html)。
+- [pairwise_cls_similarity_afqmc](https://github.com/jsksxs360/How-to-use-Transformers/tree/main/src/pairwise_cls_similarity_afqmc)：句子对分类任务，[金融同义句判断](https://xiaosheng.run/2021/12/17/transformers-note-4.html)。

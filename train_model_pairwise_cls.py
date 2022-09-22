@@ -50,8 +50,8 @@ class AFQMC(Dataset):
     def __getitem__(self, idx):
         return self.data[idx]
 
-train_data = AFQMC('../../data/afqmc_public/train.json')
-valid_data = AFQMC('../../data/afqmc_public/dev.json')
+train_data = AFQMC('data/afqmc_public/train.json')
+valid_data = AFQMC('data/afqmc_public/dev.json')
 
 def collote_fn(batch_samples):
     batch_sentence_1, batch_sentence_2 = [], []

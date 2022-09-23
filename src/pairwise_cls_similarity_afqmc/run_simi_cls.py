@@ -180,10 +180,7 @@ if __name__ == '__main__':
         test(args, test_dataset, model, tokenizer, save_weights)
     # Predicting
     if args.do_predict:
-        test_dataset = []
-        with open(args.test_file, 'rt') as f:
-            for idx, line in enumerate(f):
-                test_dataset.append(json.loads(line.strip()))
+        test_dataset = AFQMC(args.test_file)
         for save_weight in save_weights:
             logger.info(f'loading weights from {save_weight}...')
             model.load_state_dict(torch.load(os.path.join(args.output_dir, save_weight)))
@@ -191,7 +188,8 @@ if __name__ == '__main__':
 
             results = []
             model.eval()
-            for sample in tqdm(test_dataset):
+            for s_idx in tqdm(range(len(test_dataset))):
+                sample = test_dataset[s_idx]
                 pred, prob = predict(args, sample['sentence1'], sample['sentence2'], model, tokenizer)
                 results.append({
                     "sentence1": sample['sentence1'], 

@@ -1,4 +1,5 @@
-# Transformers 库快速入门
+![title](title.jpg)
+
 [Transformers](https://huggingface.co/docs/transformers/index) 是由 [Hugging Face](https://huggingface.co/) 开发的一个 NLP 包，支持加载目前绝大部分的预训练模型。随着 BERT、GPT 等大规模模型的兴起，越来越多的公司和研究者采用 Transformers 库来构建 NLP 应用。
 
 该项目为[《Transformers 库快速入门》](https://xiaosheng.run/2021/12/08/transformers-note-1.html)系列教程的代码仓库，按照以下方式组织代码：

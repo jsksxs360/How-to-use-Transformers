@@ -18,9 +18,8 @@
 
 - **第二部分：Transformers 实战**
 
-  - 第五章：快速分词器
-
-  - 第六章：序列标注任务
+  - 第五章：[快速分词器](https://xiaosheng.run/2022/03/08/transformers-note-5.html)
+  - 第六章：[序列标注任务](https://xiaosheng.run/2022/03/18/transformers-note-6.html)
 
   - 第七章：翻译任务
   - 第八章：文本摘要任务
@@ -29,3 +28,4 @@
 ## Demo 一览
 
 - [pairwise_cls_similarity_afqmc](https://github.com/jsksxs360/How-to-use-Transformers/tree/main/src/pairwise_cls_similarity_afqmc)：句子对分类任务，[金融同义句判断](https://xiaosheng.run/2021/12/17/transformers-note-4.html)。
+- [sequence_labeling_ner_cpd](https://github.com/jsksxs360/How-to-use-Transformers/tree/main/src/sequence_labeling_ner_cpd)：序列标注任务，[命名实体识别](https://xiaosheng.run/2022/03/18/transformers-note-6.html)。

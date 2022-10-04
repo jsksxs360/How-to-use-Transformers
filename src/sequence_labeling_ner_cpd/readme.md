@@ -15,6 +15,13 @@ loss = loss_fct(active_logits, active_labels)
 
 最后通过 `view()` 将 batch 中的多个向量序列连接为一个序列，这样就可以直接使用交叉熵函数计算损失，而不必进行维度调整。
 
-除了本文介绍的纯基于 BERT 的 NER 模型，我们还实现了一个带有 CRF 层的 BERT+CRF 模型，分别通过运行 *run_ner_softmax.sh* 和 *run_ner_crf.sh* 脚本进行训练。如果要进行测试或者将预测结果保存到文件，只需把脚本中的 `--do_train` 改成 `--do_test` 或 `--do_predict`。
+除了本文介绍的纯基于 BERT 的 NER 模型，我们还实现了一个带有 CRF 层的 BERT+CRF 模型，分别通过运行 *run_ner_softmax.sh* 和 *run_ner_crf.sh* 脚本进行训练。
+
+```
+bash run_ner_softmax.sh
+bash run_ner_crf.sh
+```
+
+如果要进行测试或者将预测结果保存到文件，只需把脚本中的 `--do_train` 改成 `--do_test` 或 `--do_predict`。
 
 > 经过 3 轮训练，最终 BERT 模型在测试集上的准确率为 95.10%，BERT+CRF 为 95.37%（Nvidia Tesla V100, batch=4）。

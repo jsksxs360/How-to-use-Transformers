@@ -11,20 +11,24 @@ from transformers import AutoTokenizer, AutoConfig
 from transformers import BertPreTrainedModel, BertModel
 from transformers import AdamW, get_scheduler
 
-learning_rate = 1e-5
-batch_size = 4
-epoch_num = 3
-
-seed = 7
-torch.manual_seed(seed)
-torch.cuda.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
-random.seed(seed)
-np.random.seed(seed)
-os.environ['PYTHONHASHSEED'] = str(seed)
+def seed_everything(seed=1029):
+    random.seed(seed)
+    os.environ['PYTHONHASHSEED'] = str(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    # some cudnn methods can be random even after fixing the seed
+    # unless you tell it to be deterministic
+    torch.backends.cudnn.deterministic = True
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print(f'Using {device} device')
+seed_everything(7)
+
+learning_rate = 1e-5
+batch_size = 4
+epoch_num = 3
 
 checkpoint = "bert-base-chinese"
 tokenizer = AutoTokenizer.from_pretrained(checkpoint)

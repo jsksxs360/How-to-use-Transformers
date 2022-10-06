@@ -9,6 +9,7 @@ __pycache__/
 # Dataset
 data/FashionMNIST/
 data/translation2019zh/
+data/lcsts_tsv/
 
 # C extensions
 *.so

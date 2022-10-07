@@ -21,7 +21,7 @@
   - 第五章：[快速分词器](https://xiaosheng.run/2022/03/08/transformers-note-5.html)
   - 第六章：[序列标注任务](https://xiaosheng.run/2022/03/18/transformers-note-6.html)
   - 第七章：[翻译任务](https://xiaosheng.run/2022/03/24/transformers-note-7.html)
-  - 第八章：文本摘要任务
+  - 第八章：[文本摘要任务](https://xiaosheng.run/2022/03/29/transformers-note-8.html)
   - 第九章：抽取式问答
 
 ## Demo 一览
@@ -29,3 +29,4 @@
 - [pairwise_cls_similarity_afqmc](https://github.com/jsksxs360/How-to-use-Transformers/tree/main/src/pairwise_cls_similarity_afqmc)：句子对分类任务，[金融同义句判断](https://xiaosheng.run/2021/12/17/transformers-note-4.html)。
 - [sequence_labeling_ner_cpd](https://github.com/jsksxs360/How-to-use-Transformers/tree/main/src/sequence_labeling_ner_cpd)：序列标注任务，[命名实体识别](https://xiaosheng.run/2022/03/18/transformers-note-6.html)。
 - [seq2seq_translation](https://github.com/jsksxs360/How-to-use-Transformers/tree/main/src/seq2seq_translation)：seq2seq任务，[中英翻译](https://xiaosheng.run/2022/03/24/transformers-note-7.html)。
+- [seq2seq_summarization](https://github.com/jsksxs360/How-to-use-Transformers/tree/main/src/seq2seq_summarization)：seq2seq任务，[文本摘要](https://xiaosheng.run/2022/03/29/transformers-note-8.html)。

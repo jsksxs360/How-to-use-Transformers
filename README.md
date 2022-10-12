@@ -23,7 +23,7 @@
   - 第七章：[翻译任务](https://xiaosheng.run/2022/03/24/transformers-note-7.html)
   - 第八章：[文本摘要任务](https://xiaosheng.run/2022/03/29/transformers-note-8.html)
   - 第九章：[抽取式问答](https://xiaosheng.run/2022/04/02/transformers-note-9.html)
-  - 第十章：Prompt情感分析
+  - 第十章：[Prompt 情感分析](https://xiaosheng.run/2022/10/10/transformers-note-10.html)
 
 ## Demo 一览
 
@@ -32,3 +32,4 @@
 - [seq2seq_translation](https://github.com/jsksxs360/How-to-use-Transformers/tree/main/src/seq2seq_translation)：seq2seq任务，[中英翻译](https://xiaosheng.run/2022/03/24/transformers-note-7.html)。
 - [seq2seq_summarization](https://github.com/jsksxs360/How-to-use-Transformers/tree/main/src/seq2seq_summarization)：seq2seq任务，[文本摘要](https://xiaosheng.run/2022/03/29/transformers-note-8.html)。
 - [sequence_labeling_extractiveQA_cmrc](https://github.com/jsksxs360/How-to-use-Transformers/tree/main/src/sequence_labeling_extractiveQA_cmrc)：序列标注任务，[抽取式问答](https://xiaosheng.run/2022/04/02/transformers-note-9.html)。
+- [text_cls_prompt_senti_chnsenticorp](https://github.com/jsksxs360/How-to-use-Transformers/tree/main/src/text_cls_prompt_senti_chnsenticorp)：文本分类任务，[Prompt 情感分析](https://xiaosheng.run/2022/10/10/transformers-note-10.html)。

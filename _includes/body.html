@@ -1,0 +1,30 @@
+<div class="page-wrapper" tabindex="-1" role="main">
+    {% if page.cover %}
+        <img src="{{ page.cover }}"
+             width="100%"
+             height="{{ page.cover_height | default: '100%' }}"
+             alt="{{ page.title | escape }}"
+             style="object-fit: cover;"
+        />
+    {% endif %}
+
+    <div class="page-inner">
+        <div id="book-search-results">
+            <div class="search-noresults">
+                <section class="normal markdown-section">
+                    {% if page.title %}
+                        <h1 id="{{ page.id }}">{{ page.title | escape }}</h1>
+                    {% else %}
+                        <h1 id="{{ page.id }}">{{ site.title | escape }}</h1>
+                    {% endif %}
+
+                    {{ content }}
+                </section>
+            </div>
+
+            {%- include search.html -%}
+        </div>
+    </div>
+</div>
+
+{% include mathjax.html %}

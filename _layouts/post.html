@@ -1,0 +1,67 @@
+<!DOCTYPE HTML>
+<html lang="en" >
+    <head>
+
+        {%- include head.html -%}
+
+        {% if page.previous %}
+            <link rel="prev" href="{{site.baseurl}}{{page.previous.url}}" />
+        {% else %}
+            <link rel="prev" href="{{site.baseurl}}/" />
+        {% endif %}
+
+        {% if page.next %}
+            <link rel="next" href="{{site.baseurl}}{{page.next.url}}" />
+        {% endif %}
+    </head>
+    <body>
+        <div class="book">
+
+            {%- include toc-date.html -%}
+
+            <div class="book-body">
+                <div class="book-header" role="navigation">
+                    <!-- Title -->
+                    <h1>
+                        <i class="fa fa-circle-o-notch fa-spin"></i>
+                        {% if page.title %}
+                            <a href="." >{{ page.title | escape }}</a>
+                        {% else %}
+                            <a href="." >{{ site.title | escape }}</a>
+                        {% endif %}
+                    </h1>
+                </div>
+
+                <div class="body-inner">
+                    {%- include body.html -%}
+
+                    {% if page.previous %}
+                        <a href="{{site.baseurl}}{{page.previous.url}}" class="navigation navigation-prev navigation-unique" aria-label="Previous page: {{page.previous.title}}">
+                            <i class="fa fa-angle-left"></i>
+                        </a>
+                    {% else %}
+                        <a href="{{site.baseurl}}/" class="navigation navigation-prev navigation-unique" aria-label="Previous page: {{site.title}}">
+                            <i class="fa fa-angle-left"></i>
+                        </a>
+                    {% endif %}
+
+                    {% if page.next %}
+                        <a href="{{site.baseurl}}{{page.next.url}}" class="navigation navigation-next navigation-unique" aria-label="Next page: {{page.next.title}}">
+                            <i class="fa fa-angle-right"></i>
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <script>
+            var gitbook = gitbook || [];
+            gitbook.push(function() {
+                gitbook.page.hasChanged({%- include metadata-post.json.tpl -%});
+            });
+            </script>
+        </div>
+
+        {%- include footer.html -%}
+
+    </body>
+</html>

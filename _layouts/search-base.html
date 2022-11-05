@@ -1,0 +1,70 @@
+<!-- Slightly Modified from _layouts/home.html -->
+
+<!DOCTYPE HTML>
+<html lang="en" >
+    <head>
+        {%- include head.html -%}
+
+        {% assign reversed_posts = site.posts | reverse %}
+
+        {% if reversed_posts %}
+            <link rel="next" href="{{site.baseurl}}{{reversed_posts.first.url}}" />
+        {% endif %}
+    </head>
+    <body>
+        <div class="book">
+
+            {%- include toc-date.html -%}
+
+            <div class="book-body">
+                <div class="book-header" role="navigation">
+                    <!-- Title -->
+                    <h1>
+                        <i class="fa fa-circle-o-notch fa-spin"></i>
+                        {% if page.title %}
+                            <a href="." >{{ page.title | escape }}</a>
+                        {% else %}
+                            <a href="." >{{ site.title | escape }}</a>
+                        {% endif %}
+                    </h1>
+                </div>
+
+                <div class="body-inner">
+                    <div class="page-wrapper" tabindex="-1" role="main">
+                        <div class="page-inner">
+                            <section class="normal markdown-section">
+                                {% if page.title %}
+                                    <h1 id="{{ page.id }}">{{ page.title | escape }}</h1>
+                                {% else %}
+                                    <h1 id="{{ page.id }}">{{ site.title | escape }}</h1>
+                                {% endif %}
+
+                                <br />
+                            </section>
+
+                            {{ content }}
+
+                            <div id="book-search-results">
+                                <div class="search-noresults">
+                                    
+                                </div>
+                    
+                                {%- include search.html -%}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <script>
+            var gitbook = gitbook || [];
+            gitbook.push(function() {
+                gitbook.page.hasChanged({%- include metadata-home.json.tpl -%});
+            });
+            </script>
+        </div>
+
+        {%- include footer.html -%}
+
+    </body>
+</html>

@@ -1,0 +1,269 @@
+---
+---
+
+.book-body {
+    overflow-y: scroll;
+}
+
+.book-body .book-header {
+    position: fixed;
+    width: 100%;
+}
+
+.book.with-summary .book-body .book-header {
+    position: fixed;
+    width: calc(100% - 300px);
+}
+
+.book-body .body-inner {
+    /* position: absolute; */
+    margin-top: 50px;
+    min-height: calc(100% - 50px);
+}
+
+.book-body .body-inner .page-wrapper {
+    min-height: calc(100% - 46px);
+}
+
+.book-body .body-inner .page-wrapper .page-inner {
+    padding-bottom: 20px;
+}
+
+@media (max-width: 1240px) {
+    .book-body .body-inner .navigation {
+        max-width: calc(50% - 3px);
+        width: calc(50% - 3px);
+    }
+}
+
+.book .book-body .book-header {
+    background: #ffffff;
+}
+
+.book.color-theme-1 .book-body .book-header {
+    background: #f3eacb;
+}
+
+.book.color-theme-2 .book-body .book-header {
+    background: #1c1f2b;
+}
+
+.page-inner {
+    max-width: {{ site.page_width | default: '800px' }};
+}
+
+.back-to-top {
+    right: calc((100% - 300px - min(100% - 300px, {{ site.page_width | default: '800px' }})) / 2 + 25px);
+}
+
+/* scrollbar */
+::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+}
+
+::-webkit-scrollbar-track-piece {
+    /* background-color: rgba(125, 125, 125, 0.2); */
+    -webkit-border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:vertical {
+    height: 5px;
+    background-color: rgba(7, 17, 27, .2);
+    -webkit-border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:horizontal {
+    width: 5px;
+    background-color: rgba(125, 125, 125, 0.2);
+    -webkit-border-radius: 6px;
+}
+
+/* Style for search page on mobile screens */
+
+#book-search-input-link {
+    padding: 6px;
+    background: 0 0;
+    background: inherit;
+    transition: top .5s ease;
+    border-bottom: 1px solid rgba(0,0,0,.07);
+    border-top: 1px solid rgba(0,0,0,.07);
+    margin-bottom: 10px;
+    margin-top: -1px;
+}
+
+#book-search-input-link a {
+    width: 100%;
+    background: 0 0;
+    border: 1px solid transparent;
+    box-shadow: none;
+    outline: 0;
+    line-height: 38px;
+    padding: 7px 7px;
+    color: #757575;
+}
+
+#book-search-input {
+    display: block;
+}
+#book-search-input-link {
+    display: none;
+}
+
+@media (max-width: 1240px) {
+    #book-search-input {
+        display: none;
+    }
+    #book-search-input-link {
+        display: block;
+    }
+}
+
+#book-search-input-inside {
+    padding: 6px;
+    background: 0 0;
+    transition: top .5s ease;
+    background: #fff;
+    border-bottom: 1px solid rgba(0,0,0,.07);
+    border-top: 1px solid rgba(0,0,0,.07);
+    margin-bottom: 10px;
+    margin-top: -1px;
+}
+
+#book-search-input-inside input {
+    width: 100%;
+    background: 0 0;
+    border: 1px solid transparent;
+    box-shadow: none;
+    outline: 0;
+    line-height: 22px;
+    padding: 7px 7px;
+    color: inherit;
+}
+
+
+/* Custom font settings */
+
+.book.font-family-0 {
+    font-family: Georgia, serif;
+}
+.book.font-family-1 {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+/* Render wide tables */
+
+.table-wrapper {
+    overflow-x: scroll;
+}
+
+/* Tips, warnings, and dangers */
+
+.markdown-section blockquote.block-tip {
+    border-color: var(--c-tip);
+    background-color: var(--c-tip-bg);
+    color: var(--c-tip-text);
+    font-family: var(--font-family);
+}
+
+.markdown-section blockquote.block-tip h1 {
+    color: var(--c-tip-title);
+}
+
+.markdown-section blockquote.block-tip h2 {
+    color: var(--c-tip-title);
+}
+
+.markdown-section blockquote.block-tip h3 {
+    color: var(--c-tip-title);
+}
+
+.markdown-section blockquote.block-tip h4 {
+    color: var(--c-tip-title);
+}
+
+.markdown-section blockquote.block-tip h5 {
+    color: var(--c-tip-title);
+}
+
+.markdown-section blockquote.block-tip h6 {
+    color: var(--c-tip-title);
+}
+
+.markdown-section blockquote.block-warning {
+    border-color: var(--c-warning);
+    background-color: var(--c-warning-bg);
+    color: var(--c-warning-text);
+    font-family: var(--font-family);
+}
+
+.markdown-section blockquote.block-warning h1 {
+    color: var(--c-warning-title);
+}
+
+.markdown-section blockquote.block-warning h2 {
+    color: var(--c-warning-title);
+}
+
+.markdown-section blockquote.block-warning h3 {
+    color: var(--c-warning-title);
+}
+
+.markdown-section blockquote.block-warning h4 {
+    color: var(--c-warning-title);
+}
+
+.markdown-section blockquote.block-warning h5 {
+    color: var(--c-warning-title);
+}
+
+.markdown-section blockquote.block-warning h6 {
+    color: var(--c-warning-title);
+}
+
+.markdown-section blockquote.block-danger {
+    border-color: var(--c-danger);
+    background-color: var(--c-danger-bg);
+    color: var(--c-danger-text);
+    font-family: var(--font-family);
+}
+
+.markdown-section blockquote.block-danger h1 {
+    color: var(--c-danger-title);
+}
+
+.markdown-section blockquote.block-danger h2 {
+    color: var(--c-danger-title);
+}
+
+.markdown-section blockquote.block-danger h3 {
+    color: var(--c-danger-title);
+}
+
+.markdown-section blockquote.block-danger h4 {
+    color: var(--c-danger-title);
+}
+
+.markdown-section blockquote.block-danger h5 {
+    color: var(--c-danger-title);
+}
+
+.markdown-section blockquote.block-danger h6 {
+    color: var(--c-danger-title);
+}
+
+:root {
+    --c-tip: #42b983;
+    --c-tip-bg: #e2f5ec;
+    --c-tip-text: #215d42;
+    --c-tip-title: #359469;
+    --c-warning: #e7c000;
+    --c-warning-bg: rgba(255, 229, 100, .25);
+    --c-warning-text: #6b5900;
+    --c-warning-title: #b29400;
+    --c-danger: #c00;
+    --c-danger-bg: #ffe0e0;
+    --c-danger-text: #600;
+    --c-danger-title: #c00;
+    --font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+}

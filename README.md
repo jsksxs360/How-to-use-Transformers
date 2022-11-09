@@ -14,6 +14,9 @@ permalink: /
 
 希望该教程能帮助到你😊
 
-## License
+> **注意：**本教程只专注于处理文本模态，多模态方法请查阅相关文档。
+{: .block-tip }
+
+#### License
 
 This book is open sourced under the Apache License, Version 2.0.

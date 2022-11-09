@@ -9,7 +9,7 @@ description: >
 version:          1.0
 gitbook_version:  3.2.3
 
-url:              'https://sighingnow.github.io'
+url:              'https://jsksxs360.github.io/'
 baseurl:          '/How-to-use-Transformers'
 rss:              RSS
 
@@ -36,7 +36,7 @@ kramdown:
   syntax_highlighter_opts:
     guess_lang:           true
 
-syntax_highlighter_style: colorful
+syntax_highlighter_style: github
 
 markdown_ext:     markdown,mkdown,mkdn,mkd,md
 
@@ -47,7 +47,10 @@ exclude:
   - _drafts
 
 collections:
-  pages:
+  back:
+    output: true
+    permalink: /:collection/:path/
+  intro:
     output: true
     permalink: /:collection/:path/
 

@@ -304,7 +304,7 @@ print(result)
 2. 将处理好的输入送入模型；
 3. 对模型的输出进行后处理 (postprocessing)，将其转换为人类方便阅读的格式。
 
-<img src="/How-to-use-Transformers/assets/img/transformers-note-1/full_nlp_pipeline.png" alt="full_nlp_pipeline" style="display: block; margin: auto; width: 800px">
+<img src="/assets/img/transformers-note-1/full_nlp_pipeline.png" alt="full_nlp_pipeline" style="display: block; margin: auto; width: 800px">
 
 ### 使用分词器进行预处理
 
@@ -365,7 +365,7 @@ model = AutoModel.from_pretrained(checkpoint)
 
 > 其实前面我们举例的所有 pipelines 都具有类似的模型结构，只是模型的最后一部分会使用不同的 head 以完成对应的任务。
 >
-> <img src="/How-to-use-Transformers/assets/img/transformers-note-1/transformer_and_head.png" alt="transformer_and_head" style="display: block; margin: auto; width: 800px">
+> <img src="/assets/img/transformers-note-1/transformer_and_head.png" alt="transformer_and_head" style="display: block; margin: auto; width: 800px">
 >
 > Transformers 库封装了很多不同的结构，常见的有：
 >

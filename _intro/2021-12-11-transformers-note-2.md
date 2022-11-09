@@ -70,7 +70,7 @@ model.save_pretrained("./models/bert-base-cased/")
 
 - **按词切分 (Word-based)** 规则简单，而且能产生不错的结果。
 
-  <img src="/How-to-use-Transformers/assets/img/transformers-note-2/word_based_tokenization.png" alt="word_based_tokenization" style="display: block; margin: auto; width: 600px">
+  <img src="/assets/img/transformers-note-2/word_based_tokenization.png" alt="word_based_tokenization" style="display: block; margin: auto; width: 600px">
 
   例如直接利用 Python 自带的 `split()` 函数按空格进行分词：
 
@@ -91,7 +91,7 @@ tokenized_text = "Jim Henson was a puppeteer".split()
 
 - **按字符切分 (Character-based)** 按更细的粒度进行分词，比如按字符切分。
 
-  <img src="/How-to-use-Transformers/assets/img/transformers-note-2/character_based_tokenization.png" alt="character_based_tokenization" style="display: block; margin: auto; width: 600px">
+  <img src="/assets/img/transformers-note-2/character_based_tokenization.png" alt="character_based_tokenization" style="display: block; margin: auto; width: 600px">
 
   这种策略把文本切分为字符而不是词语，这样就只会产生一个非常小的词表，并且很少会出现词表外的 tokens。
 
@@ -103,7 +103,7 @@ tokenized_text = "Jim Henson was a puppeteer".split()
 
 - 例如 “annoyingly” 就是一个低频词，可以切分为 “annoying” 和 “ly”，这两个子词不仅出现频率更高，而且词义也得以保留。下图就是对文本 “Let’s do tokenization!“ 按子词切分的例子：
 
-  <img src="/How-to-use-Transformers/assets/img/transformers-note-2/bpe_subword.png" alt="bpe_subword" style="display: block; margin: auto; width: 600px">
+  <img src="/assets/img/transformers-note-2/bpe_subword.png" alt="bpe_subword" style="display: block; margin: auto; width: 600px">
 
   可以看到，“tokenization” 被切分为了 “token” 和 “ization”，不仅保留了语义，而且只用两个 token 就表示了一个长词。这中策略只用一个较小的词表就可以覆盖绝大部分的文本，基本不会产生 unknown tokens。尤其对于土耳其语等黏着语言，可以通过串联多个子词构成几乎任意长度的复杂长词。
 

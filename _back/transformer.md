@@ -23,7 +23,7 @@ layout: post
 
 GPT 和 BERT 被提出之后，NLP 领域出现了越来越多基于 Transformer 结构的模型，其中比较有名有：
 
-<img src="/How-to-use-Transformers/assets/img/transformers/transformers_chrono.svg" alt="transformers_chrono">
+<img src="/assets/img/transformers/transformers_chrono.svg" alt="transformers_chrono">
 
 虽然新的 Transformer 模型层出不穷，它们采用不同的预训练目标在不同的数据集上进行训练，但是依然可以按模型结构将它们大致分为三类：
 
@@ -46,11 +46,11 @@ Transformer 模型本质上都是预训练语言模型，大都采用自监督�
 
 - 基于句子的前 $n$ 个词来预测下一个词，因为输出依赖于过去和当前的输入，因此该任务被称为**因果语言建模** (causal language modeling)；
 
-  <img src="/How-to-use-Transformers/assets/img/transformers/causal_modeling.svg" alt="causal_modeling" style="display: block; margin: auto; width: 700px">
+  <img src="/assets/img/transformers/causal_modeling.svg" alt="causal_modeling" style="display: block; margin: auto; width: 700px">
 
 - 基于上下文（周围的词语）来预测句子中被遮盖掉的词语 (masked word)，因此该任务被称为**遮盖语言建模** (masked language modeling)。
 
-  <img src="/How-to-use-Transformers/assets/img/transformers/masked_modeling.svg" alt="masked_modeling" style="display: block; margin: auto; width: 700px">
+  <img src="/assets/img/transformers/masked_modeling.svg" alt="masked_modeling" style="display: block; margin: auto; width: 700px">
 
 这些语言模型虽然可以对训练过的语言产生统计意义上的理解，例如可以根据上下文预测被遮盖掉的词语，但是如果直接拿来完成特定任务，效果往往并不好。
 
@@ -63,11 +63,11 @@ Transformer 模型本质上都是预训练语言模型，大都采用自监督�
 
 除了 DistilBERT 等少数模型，大部分 Transformer 模型都为了取得更好的性能而不断地增加模型大小（参数量）和增加预训练数据。下图展示了近年来模型大小的变化趋势：
 
-<img src="/How-to-use-Transformers/assets/img/transformers/nlp_models_size.png" alt="nlp_models_size" style="display: block; margin: auto; width: 700px">
+<img src="/assets/img/transformers/nlp_models_size.png" alt="nlp_models_size" style="display: block; margin: auto; width: 700px">
 
 但是，从头训练一个预训练语言模型，尤其是大模型，需要海量的数据，不仅时间和计算成本非常高，对环境的影响也很大：
 
-<img src="/How-to-use-Transformers/assets/img/transformers/carbon_footprint.svg" alt="carbon_footprint">
+<img src="/assets/img/transformers/carbon_footprint.svg" alt="carbon_footprint">
 
 可以想象，如果每一次研究者或是公司想要使用语言模型，都需要基于海量数据从头训练，将耗费巨大且不必要的全球成本，因此共享语言模型非常重要。只要在预训练好的模型权重上构建模型，就可以大幅地降低计算成本和碳排放。
 
@@ -78,7 +78,7 @@ Transformer 模型本质上都是预训练语言模型，大都采用自监督�
 
 前面已经讲过，预训练是一种从头开始训练模型的方式：所有的模型权重都被随机初始化，然后在没有任何先验知识的情况下开始训练：
 
-<img src="/How-to-use-Transformers/assets/img/transformers/pretraining.svg" alt="pretraining" style="display: block; margin: auto; width: 700px">
+<img src="/assets/img/transformers/pretraining.svg" alt="pretraining" style="display: block; margin: auto; width: 700px">
 
 这个过程不仅需要海量的训练数据，而且时间和经济成本都非常高。
 
@@ -92,7 +92,7 @@ Transformer 模型本质上都是预训练语言模型，大都采用自监督�
 
 例如，我们可以选择一个在大规模英文语料上预训练好的模型，使用 arXiv 语料进行微调，以生成一个面向学术/研究领域的模型。这个微调的过程只需要很少的数据：我们相当于将预训练模型已经获得的知识“迁移”到了新的领域，因此被称为**迁移学习**。
 
-<img src="/How-to-use-Transformers/assets/img/transformers/finetuning.svg" alt="finetuning" style="display: block; margin: auto; width: 700px">
+<img src="/assets/img/transformers/finetuning.svg" alt="finetuning" style="display: block; margin: auto; width: 700px">
 
 与从头训练相比，微调模型所需的时间、数据、经济和环境成本都要低得多，并且与完整的预训练相比，微调训练的约束更少，因此迭代尝试不同的微调方案也更快、更容易。实践证明，即使是对于自定义任务，除非你有大量的语料，否则相比训练一个专门的模型，基于预训练模型进行微调会是一个更好的选择。
 
@@ -105,7 +105,7 @@ Transformer 模型本质上都是预训练语言模型，大都采用自监督�
 - **Encoder（左边）：**负责理解输入文本，为每个输入构造对应的语义表示（语义特征）；
 - **Decoder（右边）：**负责生成输出，使用 Encoder 输出的语义表示结合其他输入来生成目标序列。
 
-<img src="/How-to-use-Transformers/assets/img/transformers/transformers_blocks.svg" alt="transformers_blocks" style="display: block; margin: auto; width: 700px">
+<img src="/assets/img/transformers/transformers_blocks.svg" alt="transformers_blocks" style="display: block; margin: auto; width: 700px">
 
 这两个模块可以根据任务的需求而单独使用：
 
@@ -137,7 +137,7 @@ Transformer 模型本来是为了翻译任务而设计的。在训练过程中�
 
 原始的 Transformer 模型结构如下图所示，Encoder 在左，Decoder 在右：
 
-<img src="/How-to-use-Transformers/assets/img/transformers/transformers.svg" alt="transformers">
+<img src="/assets/img/transformers/transformers.svg" alt="transformers">
 
 其中，Decoder 中的第一个注意力层关注 Decoder 过去所有的输入，而第二个注意力层则是使用 Encoder 的输出，因此 Decoder 可以基于整个输入句子来预测当前词语。这对于翻译任务非常有用，因为同一句话在不同语言下的词语顺序可能并不一致（不能逐词翻译），所以出现在源语言句子后部的词语反而可能对目标语言句子前部词语的预测非常重要。
 
@@ -148,7 +148,7 @@ Transformer 模型本来是为了翻译任务而设计的。在训练过程中�
 
 虽然新的 Transformer 模型层出不穷，但是它们依然可以被归纳到以下三种结构中：
 
-<img src="/How-to-use-Transformers/assets/img/transformers/main_transformer_architectures.png" alt="main_transformer_architectures" style="display: block; margin: auto; width: 400px">
+<img src="/assets/img/transformers/main_transformer_architectures.png" alt="main_transformer_architectures" style="display: block; margin: auto; width: 400px">
 
 ### Encoder 分支
 

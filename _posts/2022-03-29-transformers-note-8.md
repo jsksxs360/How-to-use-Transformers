@@ -23,7 +23,7 @@ layout: post
 
 T5 模型通过模板前缀 (prompt prefix) 将各种 NLP 任务都转换到 text-to-text 框架进行预训练，例如摘要任务的前缀就是 `summarize:`，模型以前缀作为条件生成符合模板的文本，这使得一个模型就可以完成多种 NLP 任务：
 
-<img src="/How-to-use-Transformers/assets/img/transformers-note-8/t5.png" alt="t5.png" style="display: block; margin: auto; width: 700px">
+<img src="/assets/img/transformers-note-8/t5.png" alt="t5.png" style="display: block; margin: auto; width: 700px">
 
 在本文中，我们将专注于微调多语言 mT5 模型用于中文摘要任务，mT5 模型不使用前缀，但是具备 T5 模型大部分的多功能性。
 

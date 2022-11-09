@@ -77,7 +77,7 @@ $$
 
 NNLM 的思路非常接近于前面介绍的统计语言模型，它通过输入前面的 $n−1$ 个词来预测当前词。
 
-<img src="/How-to-use-Transformers/assets/img/nnlm-to-bert/nnlm.png" width="600px" style="display:block; margin:auto;">
+<img src="/assets/img/nnlm-to-bert/nnlm.png" width="600px" style="display:block; margin:auto;">
 
 首先通过查表 $C$ 得到要预测词语 $w_t$ 前面的 $n−1$ 个词对应的词向量 $C(w_{t-n+1}),…,C(w_{t-2}),C(w_{t-1})$，然后将这些词向量拼接后输入到带有激活函数的隐藏层中，最后通过 $\text{Softmax}$ 函数预测概率。
 
@@ -89,7 +89,7 @@ NNLM 的思路非常接近于前面介绍的统计语言模型，它通过输入
 
 Word2Vec 的模型结构和 NNLM 基本一致，只是训练方法有所不同，分为 CBOW (Continuous Bag-of-Words) 和 Skip-gram 两种。
 
-<img src="/How-to-use-Transformers/assets/img/nnlm-to-bert/word2vec.png" width="700px" style="display:block; margin:auto;">
+<img src="/assets/img/nnlm-to-bert/word2vec.png" width="700px" style="display:block; margin:auto;">
 
 其中 CBOW 使用待预测词语周围的词语 $w(t-2),w(t-1),w(t+1),w(t+2)$ 来进行预测 $w(t)$，Skip-gram 则正好相反，它使用当前词语 $w(t)$ 来预测它的周围词语。
 
@@ -114,7 +114,7 @@ Word2Vec 的模型结构和 NNLM 基本一致，只是训练方法有所不同�
 
 具体地，ELMO 首先利用语言模型进行预训练，然后在实际使用时，从预训练网络中提取各层的词向量拼接起来作为新的词向量。
 
-<img src="/How-to-use-Transformers/assets/img/nnlm-to-bert/elmo.png" width="600px" style="display:block; margin:auto;">
+<img src="/assets/img/nnlm-to-bert/elmo.png" width="600px" style="display:block; margin:auto;">
 
 ELMO 采用双层双向 LSTM 作为网络结构，从两个方向编码词语的上下文信息来进行预测，相当于将编码层直接封装到了语言模型中。训练完成后不仅学习到了词语的词向量，还训练好了一个双层双向的 LSTM 网络结构。对于每个词语，可以从第一层 LSTM 中得到包含句法信息的词向量，从第二层 LSTM 中得到包含语义信息的词向量……最终通过加权求和就可以得到每一个词语最终的词向量。
 
@@ -128,7 +128,7 @@ ELMO 采用双层双向 LSTM 作为网络结构，从两个方向编码词语的
 
 BERT 在模型大框架上采用和 GPT 完全相同的两阶段模型，首先是语言模型预训练，然后使用微调模式解决下游任务。BERT 不仅像 GPT 模型一样采用 Transformer 作为编码器，而且在预训练阶段采用了类似 ELMO 的双向语言模型。
 
-<img src="/How-to-use-Transformers/assets/img/nnlm-to-bert/bert.png" width="300px" style="display:block; margin:auto;">
+<img src="/assets/img/nnlm-to-bert/bert.png" width="300px" style="display:block; margin:auto;">
 
 因此 BERT 不仅编码能力强大，而且对各种下游任务，Bert 都可以简单地通过改造输入输出部分来完成。但是 BERT 的优点同样也是它的缺陷，由于 BERT 构建的是双向语言模型，因而无法直接用于文本生成任务。
 
@@ -144,7 +144,7 @@ BERT 模型取得成功之后， NLP 研究者们并没有停下脚步，例如 
 
 其中微软提出的 [UNILM](https://arxiv.org/pdf/1905.03197.pdf) (UNIfied pretrained Language Model) 就是其中一个典型的代表，它把 BERT 的 MASK 机制运用到了一个很高的水平。
 
-<img src="/How-to-use-Transformers/assets/img/nnlm-to-bert/unilm.png" width="700px" style="display:block; margin:auto;">
+<img src="/assets/img/nnlm-to-bert/unilm.png" width="700px" style="display:block; margin:auto;">
 
 UNILM 通过给 Transformer 中 Self-Attention 添加不同的 MASK 矩阵，可以在不改变 BERT 模型结构的基础上，同时实现双向、单向和 Seq2Seq 的语言模型，是一个对 BERT 进行扩展的优雅方案。
 

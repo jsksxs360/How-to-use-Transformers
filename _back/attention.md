@@ -8,7 +8,7 @@ layout: post
 
 正如在前两章所说，自从 2017 年 Google 发布[《Attention is All You Need》](https://arxiv.org/abs/1706.03762)之后，各种基于 Transformer 的模型和方法层出不穷。尤其是 2018 年，OpenAI 发布的 [GPT](https://openai.com/blog/language-unsupervised/) 和 Google 发布的 [BERT](https://aclanthology.org/N19-1423/) 模型在几乎所有 NLP 任务上都取得了远超先前最强基准的性能，将 Transformer 模型的热度推上了新的高峰。
 
-<img src="/How-to-use-Transformers/assets/img/attention/transformers_timeline.png" alt="transformers_timeline" style="display: block; margin: auto; width: 700px">
+<img src="/assets/img/attention/transformers_timeline.png" alt="transformers_timeline" style="display: block; margin: auto; width: 700px">
 
 Transformer 模型之所以如此强大，是因为它抛弃了之前广泛采用的循环网络和卷积网络，而采用了一种特殊的结构——注意力机制 (Attention) 来建模文本。
 
@@ -53,7 +53,7 @@ $$
 
 虽然 Attention 有许多种实现方式，但是最常见的还是 Scaled Dot-product Attention。
 
-<img width="250px" src="/How-to-use-Transformers/assets/img/attention/attention.png" style="display:block;margin:auto;">
+<img width="250px" src="/assets/img/attention/attention.png" style="display:block;margin:auto;">
 
 Scaled Dot-product Attention 共包含 2 个主要步骤：
 
@@ -184,7 +184,7 @@ def scaled_dot_product_attention(query, key, value, query_mask=None, key_mask=No
 
 Multi-head Attention 首先通过线性映射将 $\boldsymbol{Q},\boldsymbol{K},\boldsymbol{V}$ 序列映射到特征空间，每一组线性投影后的向量表示称为一个头 (head)，然后在每组映射后的序列上再应用 Scaled Dot-product Attention：
 
-<img width="250px" src="/How-to-use-Transformers/assets/img/attention/multi_head_attention.png" style="display:block;margin:auto;">
+<img width="250px" src="/assets/img/attention/multi_head_attention.png" style="display:block;margin:auto;">
 
 每个注意力头负责关注某一方面的语义相似性，多个头就可以让模型同时关注多个方面。因此与简单的 Scaled Dot-product Attention 相比，Multi-head Attention 可以捕获到更加复杂的特征信息。
 
@@ -270,11 +270,11 @@ torch.Size([1, 5, 768])
 
 回忆一下上一章中介绍过的标准 Transformer 结构，Encoder 负责将输入的词语序列转换为词向量序列，Decoder 则基于 Encoder 的隐状态来迭代地生成词语序列作为输出，每次生成一个词语。
 
-<img src="/How-to-use-Transformers/assets/img/attention/transformer.jpeg" alt="transformer" style="display: block; margin: auto; width: 700px">
+<img src="/assets/img/attention/transformer.jpeg" alt="transformer" style="display: block; margin: auto; width: 700px">
 
 其中，Encoder 和 Decoder 都各自包含有多个 building blocks。下图展示了一个翻译任务的例子：
 
-<img src="/How-to-use-Transformers/assets/img/attention/encoder_decoder_architecture.png" alt="encoder_decoder_architecture" style="display: block; margin: auto; width: 700px">
+<img src="/assets/img/attention/encoder_decoder_architecture.png" alt="encoder_decoder_architecture" style="display: block; margin: auto; width: 700px">
 
 可以看到：
 
@@ -325,7 +325,7 @@ Layer Normalization 负责将一批 (batch) 输入中的每一个都标准化为
 
 向 Transformer Encoder/Decoder 中添加 Layer Normalization 目前共有两种做法：
 
-<img src="/How-to-use-Transformers/assets/img/attention/arrangements_of_layer_normalization.png" alt="arrangements_of_layer_normalization" style="display: block; margin: auto; width: 600px">
+<img src="/assets/img/attention/arrangements_of_layer_normalization.png" alt="arrangements_of_layer_normalization" style="display: block; margin: auto; width: 600px">
 
 - **Post layer normalization**：Transformer 论文中使用的方式，将 Layer normalization 放在 Skip Connections 之间。 但是因为梯度可能会发散，这种做法很难训练，还需要结合学习率预热 (learning rate warm-up) 等技巧；
 - **Pre layer normalization**：目前主流的做法，将 Layer Normalization 放置于 Skip Connections 的范围内。这种做法通常训练过程会更加稳定，并且不需要任何学习率预热。
@@ -444,7 +444,7 @@ torch.Size([1, 5, 768])
 
 Transformer Decoder 与 Encoder 最大的不同在于 Decoder 有两个注意力子层，如下图所示：
 
-<img src="/How-to-use-Transformers/assets/img/attention/transformer_decoder.png" alt="transformer_decoder" style="display: block; margin: auto; width: 600px">
+<img src="/assets/img/attention/transformer_decoder.png" alt="transformer_decoder" style="display: block; margin: auto; width: 600px">
 
 **Masked multi-head self-attention layer**：确保在每个时间步生成的词语仅基于过去的输出和当前预测的词，否则 Decoder 相当于作弊了；
 

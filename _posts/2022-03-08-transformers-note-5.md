@@ -250,7 +250,7 @@ print(model.config.id2label)
 
 这里使用的是 IOB 标签格式，“B-XXX”表示某一种标签的开始，“I-XXX”表示某一种标签的中间，“O”表示非标签。因此，该模型识别的实体类型共有 4 种：miscellaneous、person、organization 和 location。
 
-<img src="/How-to-use-Transformers/assets/img/transformers-note-5/iob_versions.png" alt="IOB_versions.png">
+<img src="/assets/img/transformers-note-5/iob_versions.png" alt="IOB_versions.png">
 
 在实际应用中， IOB 标签格式又分为两种：
 
@@ -473,7 +473,7 @@ print(results)
 
 我们首先通过 `AutoModelForQuestionAnswering` 类来手工构建一个问答模型，并且将 checkpoint 设为  [distilbert-base-cased-distilled-squad](https://huggingface.co/distilbert-base-cased-distilled-squad)。按照模型预训练时的输入格式，我们将问题和上下文通过特殊分隔符 `[SEP]` 连接成一个整体，如下图所示：
 
-<img src="/How-to-use-Transformers/assets/img/transformers-note-5/question_tokens.png" alt="question_tokens.png">
+<img src="/assets/img/transformers-note-5/question_tokens.png" alt="question_tokens.png">
 
 标准的问答模型会使用两个指针分别预测答案片段的起始 token 和结束 token 的索引（例子中分别是 21 和 24）。因此，模型会返回两个张量，分别对应答案起始 token 和结束 token 的 logits 值：
 

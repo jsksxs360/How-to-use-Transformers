@@ -11,9 +11,7 @@
 
 - **第一部分：背景知识**
   - 第一章：[自然语言处理](https://transformers.run/back/nlp/)
-
   - 第二章：[Transformer 模型](https://transformers.run/back/transformer/)
-
   - 第三章：[注意力机制](https://transformers.run/back/attention/)
 
 - **第二部分：初识 Transformers**

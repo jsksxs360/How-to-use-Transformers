@@ -1,5 +1,5 @@
             "sharing": {
-                "all": ["facebook", "google", "twitter", "weibo", "instapaper", "github", "telegram"],
+                "all": ["twitter", "weibo"],
                 "facebook": false,
                 "google": false,
                 "github": true,
@@ -7,8 +7,7 @@
                 "telegram": false,
                 "telegram_link": "https://t.me",
                 "instapaper": false,
-                "twitter": true,
-                "twitter_link": "https://twitter.com/jsksxs360",
+                "twitter": false,
                 "vk": false,
                 "weibo": false
             },

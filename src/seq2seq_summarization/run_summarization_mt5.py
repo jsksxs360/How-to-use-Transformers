@@ -64,7 +64,7 @@ def test_loop(args, dataloader, model, tokenizer):
 
             preds += [' '.join(pred.strip()) for pred in decoded_preds]
             labels += [' '.join(label.strip()) for label in decoded_labels]
-    scores = rouge.get_scores(hyps=preds, refs=labels)[0]
+    scores = rouge.get_scores(hyps=preds, refs=labels, avg=True)
     result = {key: value['f'] * 100 for key, value in scores.items()}
     result['avg'] = np.mean(list(result.values()))
     return result

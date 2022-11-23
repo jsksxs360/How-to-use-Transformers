@@ -144,7 +144,7 @@ def test_loop(dataloader, model):
 
         preds += [' '.join(pred.strip()) for pred in decoded_preds]
         labels += [' '.join(label.strip()) for label in decoded_labels]
-    scores = rouge.get_scores(hyps=preds, refs=labels)[0]
+    scores = rouge.get_scores(hyps=preds, refs=labels, avg=True)
     result = {key: value['f'] * 100 for key, value in scores.items()}
     result['avg'] = np.mean(list(result.values()))
     print(f"Rouge1: {result['rouge-1']:>0.2f} Rouge2: {result['rouge-2']:>0.2f} RougeL: {result['rouge-l']:>0.2f}\n")
@@ -204,8 +204,9 @@ print("Done!")
 #         labels += [label.strip() for label in decoded_labels]
 #     scores = rouge.get_scores(
 #         hyps=[' '.join(pred) for pred in preds], 
-#         refs=[' '.join(label) for label in labels]
-#     )[0]
+#         refs=[' '.join(label) for label in labels], 
+#         avg=True
+#     )
 #     rouges = {key: value['f'] * 100 for key, value in scores.items()}
 #     rouges['avg'] = np.mean(list(rouges.values()))
 #     print(f"Test Rouge1: {rouges['rouge-1']:>0.2f} Rouge2: {rouges['rouge-2']:>0.2f} RougeL: {rouges['rouge-l']:>0.2f}\n")

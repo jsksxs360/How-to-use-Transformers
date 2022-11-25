@@ -23,9 +23,8 @@ NLP 神经网络模型的本质就是对输入文本进行编码，常规的做�
 
 在 Transformer 模型提出之前，对 token 序列 $\boldsymbol{X}$ 的常规编码方式是通过循环网络 (RNNs) 和卷积网络 (CNNs)。
 
-RNN（例如 LSTM）的方案很简单，每一个词语 $\boldsymbol{x}_t$ 对应的编码结果 ytyt 通过递归地计算得到：
 
-- RNN（例如 LSTM）的方案很简单，每一个词语 xtxt 对应的编码结果 $\boldsymbol{y}_t$ 通过递归地计算得到：
+- RNN（例如 LSTM）的方案很简单，每一个词语 $\boldsymbol{x}_t$ 对应的编码结果 $\boldsymbol{y}_t$ 通过递归地计算得到：
   
   $$
   \boldsymbol{y}_t =f(\boldsymbol{y}_{t-1},\boldsymbol{x}_t)

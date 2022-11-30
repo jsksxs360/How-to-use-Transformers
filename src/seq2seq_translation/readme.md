@@ -1,6 +1,6 @@
 ### Seq2Seq任务（翻译）
 
-详细说明请见[《Hugging Face 的 Transformers 库快速入门（七）：翻译任务》](https://xiaosheng.run/2022/03/24/transformers-note-7.html)
+详细说明请见[《Transformers 库快速入门 第十章：翻译任务》](https://transformers.run/nlp/2022-03-24-transformers-note-7.html)
 
 运行 *run_translation_marian.sh* 脚本即可进行训练。
 

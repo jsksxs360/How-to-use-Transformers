@@ -1,6 +1,6 @@
 ### 序列标注任务（命名实体识别）
 
-详细说明请见[《Hugging Face 的 Transformers 库快速入门（六）：序列标注任务》](https://xiaosheng.run/2022/03/18/transformers-note-6.html)
+详细说明请见[《Transformers 库快速入门 第九章：序列标注任务》](https://transformers.run/nlp/2022-03-18-transformers-note-6.html)
 
 与 Transformers 库类似，我们将模型损失的计算也包含进模型本身，这样在训练循环中我们就可以直接使用模型返回的损失进行反向传播。
 

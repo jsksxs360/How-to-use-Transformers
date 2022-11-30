@@ -1,6 +1,6 @@
 ### 文本分类任务（Prompt情感分析）
 
-详细说明请见[《Hugging Face 的 Transformers 库快速入门（十）：Prompt情感分析》](https://xiaosheng.run/2022/10/10/transformers-note-10.html)
+详细说明请见[《Transformers 库快速入门 第十三章：Prompt 情感分析》](https://transformers.run/nlp/2022-10-10-transformers-note-10.html)
 
 运行 *run_prompt_senti_bert.sh* 脚本即可进行训练。
 

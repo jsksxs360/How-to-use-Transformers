@@ -30,9 +30,9 @@
 
 ## Demo 一览
 
-- [pairwise_cls_similarity_afqmc](https://github.com/jsksxs360/How-to-use-Transformers/tree/main/src/pairwise_cls_similarity_afqmc)：句子对分类任务，[金融同义句判断](https://xiaosheng.run/2021/12/17/transformers-note-4.html)。
-- [sequence_labeling_ner_cpd](https://github.com/jsksxs360/How-to-use-Transformers/tree/main/src/sequence_labeling_ner_cpd)：序列标注任务，[命名实体识别](https://xiaosheng.run/2022/03/18/transformers-note-6.html)。
-- [seq2seq_translation](https://github.com/jsksxs360/How-to-use-Transformers/tree/main/src/seq2seq_translation)：seq2seq任务，[中英翻译](https://xiaosheng.run/2022/03/24/transformers-note-7.html)。
-- [seq2seq_summarization](https://github.com/jsksxs360/How-to-use-Transformers/tree/main/src/seq2seq_summarization)：seq2seq任务，[文本摘要](https://xiaosheng.run/2022/03/29/transformers-note-8.html)。
-- [sequence_labeling_extractiveQA_cmrc](https://github.com/jsksxs360/How-to-use-Transformers/tree/main/src/sequence_labeling_extractiveQA_cmrc)：序列标注任务，[抽取式问答](https://xiaosheng.run/2022/04/02/transformers-note-9.html)。
-- [text_cls_prompt_senti_chnsenticorp](https://github.com/jsksxs360/How-to-use-Transformers/tree/main/src/text_cls_prompt_senti_chnsenticorp)：文本分类任务，[Prompt 情感分析](https://xiaosheng.run/2022/10/10/transformers-note-10.html)。
+- [pairwise_cls_similarity_afqmc](https://github.com/jsksxs360/How-to-use-Transformers/tree/main/src/pairwise_cls_similarity_afqmc)：句子对分类任务，[金融同义句判断](https://transformers.run/intro/2021-12-17-transformers-note-4/)。
+- [sequence_labeling_ner_cpd](https://github.com/jsksxs360/How-to-use-Transformers/tree/main/src/sequence_labeling_ner_cpd)：序列标注任务，[命名实体识别](https://transformers.run/nlp/2022-03-18-transformers-note-6.html)。
+- [seq2seq_translation](https://github.com/jsksxs360/How-to-use-Transformers/tree/main/src/seq2seq_translation)：seq2seq任务，[中英翻译](https://transformers.run/nlp/2022-03-24-transformers-note-7.html)。
+- [seq2seq_summarization](https://github.com/jsksxs360/How-to-use-Transformers/tree/main/src/seq2seq_summarization)：seq2seq任务，[文本摘要](https://transformers.run/nlp/2022-03-29-transformers-note-8.html)。
+- [sequence_labeling_extractiveQA_cmrc](https://github.com/jsksxs360/How-to-use-Transformers/tree/main/src/sequence_labeling_extractiveQA_cmrc)：序列标注任务，[抽取式问答](https://transformers.run/nlp/2022-04-02-transformers-note-9.html)。
+- [text_cls_prompt_senti_chnsenticorp](https://github.com/jsksxs360/How-to-use-Transformers/tree/main/src/text_cls_prompt_senti_chnsenticorp)：文本分类任务，[Prompt 情感分析](https://transformers.run/nlp/2022-10-10-transformers-note-10.html)。

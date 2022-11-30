@@ -1,6 +1,6 @@
 ### 序列标注任务（抽取式问答）
 
-详细说明请见[《Hugging Face 的 Transformers 库快速入门（九）：抽取式问答》](https://xiaosheng.run/2022/04/02/transformers-note-9.html)
+详细说明请见[《Transformers 库快速入门 第十二章：抽取式问答》](https://transformers.run/nlp/2022-04-02-transformers-note-9.html)
 
 运行 *run_extractiveQA.sh* 脚本即可进行训练。
 

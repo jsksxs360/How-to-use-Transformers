@@ -1,6 +1,6 @@
 ### Seq2Seq任务（文本摘要）
 
-详细说明请见[《Hugging Face 的 Transformers 库快速入门（八）：文本摘要任务》](https://xiaosheng.run/2022/03/29/transformers-note-8.html)
+详细说明请见[《Transformers 库快速入门 第十一章：文本摘要任务》](https://transformers.run/nlp/2022-03-29-transformers-note-8.html)
 
 运行 *run_summarization_mt5.sh* 脚本即可进行训练。
 

@@ -61,6 +61,13 @@ test_data = ChnSentiCorp('data/ChnSentiCorp/test.txt')
 
 下面我们输出数据集的尺寸，并且打印出一个训练样本：
 
+```python
+print(f'train set size: {len(train_data)}')
+print(f'valid set size: {len(valid_data)}')
+print(f'test set size: {len(test_data)}')
+print(next(iter(train_data)))
+```
+
 ```
 train set size: 9600
 valid set size: 1200
@@ -74,13 +81,12 @@ test set size: 1200
 
 大部分 Prompt 方法都是通过模板将问题转换为 MLM 任务的形式来解决，同样地，这里我们定义模板为“总体上来说很 $\texttt{[MASK]}$。$\text{x}$”，并且规定如果 $\texttt{[MASK]}$ 预测为 token “好”就判定情感为“积极”，如果预测为 token “差”就判定为“消极”。
 
-MLM 任务与[序列标注](/2022/03/18/transformers-note-6.html)任务很相似，也是对 token 进行分类，并且类别是整个词表，不同之处在于 MLM 任务只对文中特殊的 $\texttt{[MASK]}$ token 进行标注。因此 MLM 任务的标签同样是一个序列，但是只有 $\texttt{[MASK]}$ token 的位置为对应词语的索引，其他位置都应该设为 -100，以便在使用交叉熵计算损失时忽略它们。
+MLM 任务与[序列标注](/2022/03/18/transformers-note-6.html)任务很相似，也是对 token 进行分类，并且类别是整个词表，不同之处在于 MLM 任务只需要对文中特殊的 $\texttt{[MASK]}$ token 进行标注。因此在处理数据时，我们还需要：1）记录下所有 $\texttt{[MASK]}$ token 的索引，以便在模型的输出序列中将它们的表示取出。2）记录下标签 token（例如这里的“好”和“差”）对应的 ID，因为我们实际上只关心模型对这些词语的预测结果。
 
-下面以处理第一个样本为例。我们通过 `char_to_token()` 将 $\texttt{[MASK]}$ 从原文位置映射到切分后的 token 索引，并且根据情感极性将对应的标签设为“好”或“差”的 token ID。
+下面以处理第一个样本为例。我们通过 `char_to_token()` 将 $\texttt{[MASK]}$ 从原文位置映射到切分后的 token 索引，同时通过 `convert_tokens_to_ids` 来获取标签词“好”或“差”的 token ID。注意，由于标签 0 表示消极，1 表示积极，所以标签词的 token ID 也按照该顺序进行组织，以便后续从预测结果中直接取出它们对应的 logits 值。
 
 ```python
 from transformers import AutoTokenizer
-import numpy as np
 
 checkpoint = "bert-base-chinese"
 tokenizer = AutoTokenizer.from_pretrained(checkpoint)
@@ -96,22 +102,24 @@ label = '1'
 sentence = pre_text + comment
 encoding = tokenizer(sentence, truncation=True)
 tokens = encoding.tokens()
-labels = np.full(len(tokens), -100)
 mask_idx = encoding.char_to_token(sentence.find('[MASK]'))
-labels[mask_idx] = pos_id if label == '1' else neg_id
+label_word_ids = [neg_id, pos_id]
 
 print(tokens)
-print(labels)
+print('mask_idx:', mask_idx)
+print('label_word_ids:', label_word_ids)
 ```
 
 ```
+pos_id:1962     neg_id:2345
 ['[CLS]', '总', '体', '上', '来', '说', '很', '[MASK]', '。', '这', '个', '宾', '馆', '比', '较', '陈', '旧', '了', '，', '特', '价', '的', '房', '间', '也', '很', '一', '般', '。', '总', '体', '来', '说', '一', '般', '。', '[SEP]']
-[-100 -100 -100 -100 -100 -100 -100 1962 -100 -100 -100 -100 -100 -100
- -100 -100 -100 -100 -100 -100 -100 -100 -100 -100 -100 -100 -100 -100
- -100 -100 -100 -100 -100 -100 -100 -100 -100]
+mask_idx: 7
+label_word_ids: [2345, 1962]
 ```
 
-可以看到，BERT 分词器正确地将“[MASK]”识别为一个 token，并且将 `[MASK]` token 对应的标签设置为“好”的 token ID。
+可以看到，BERT 分词器正确地将“[MASK]”识别为一个 token，并且成功记录下 $\texttt{[MASK]}$ token 在序列中的索引以及标签词“好”和“差”的 token ID。
+
+> 注意，这里演示的是只对一个 $\texttt{[MASK]}$ token 进行预测的情况。如果模板中包含多个 $\texttt{[MASK]}$ token，并且每个 $\texttt{[MASK]}$ token 对应的标签词都不同，那么同样需要将这些信息都记录下来。
 
 在实际编写 DataLoader 的批处理函数 `collate_fn()` 时，我们处理的不是一个而是多个样本，因此需要对上面的操作进行扩展。
 
@@ -119,7 +127,6 @@ print(labels)
 import torch
 from torch.utils.data import DataLoader
 from transformers import AutoTokenizer
-import numpy as np
 
 checkpoint = "bert-base-chinese"
 tokenizer = AutoTokenizer.from_pretrained(checkpoint)
@@ -129,133 +136,192 @@ pos_id = tokenizer.convert_tokens_to_ids("好")
 neg_id = tokenizer.convert_tokens_to_ids("差")
 
 def collote_fn(batch_samples):
-    batch_sentence, batch_senti  = [], []
+    batch_sentences, batch_labels  = [], []
     for sample in batch_samples:
-        batch_sentence.append(pre_text + sample['comment'])
-        batch_senti.append(sample['label'])
+        batch_sentences.append(pre_text + sample['comment'])
+        batch_labels.append(int(sample['label']))
     batch_inputs = tokenizer(
-        batch_sentence, 
+        batch_sentences, 
         padding=True, 
         truncation=True, 
         return_tensors="pt"
     )
-    batch_label = np.full(batch_inputs['input_ids'].shape, -100)
-    for s_idx, sentence in enumerate(batch_sentence):
+    batch_mask_idx, label_word_id = [], [neg_id, pos_id]
+    for sentence in batch_sentences:
         encoding = tokenizer(sentence, truncation=True)
         mask_idx = encoding.char_to_token(sentence.find('[MASK]'))
-        batch_label[s_idx][mask_idx] = pos_id if batch_senti[s_idx] == 1 else neg_id
-    return batch_inputs, torch.tensor(batch_label)
+        batch_mask_idx.append(mask_idx)
+    return batch_inputs, torch.tensor(batch_mask_idx), label_word_id, torch.tensor(batch_labels)
 
 train_dataloader = DataLoader(train_data, batch_size=4, shuffle=True, collate_fn=collote_fn)
 valid_dataloader = DataLoader(valid_data, batch_size=4, shuffle=False, collate_fn=collote_fn)
 test_dataloader = DataLoader(test_data, batch_size=4, shuffle=False, collate_fn=collote_fn)
 
-batch_X, batch_y = next(iter(train_dataloader))
+batch_X, batch_mask_idx, label_word_id, batch_y = next(iter(train_dataloader))
 print('batch_X shape:', {k: v.shape for k, v in batch_X.items()})
-print('batch_y shape:', batch_y.shape)
 print(batch_X)
+print(batch_mask_idx)
 print(batch_y)
 ```
 
 ```
 batch_X shape: {
-    'input_ids': torch.Size([4, 96]), 
-    'token_type_ids': torch.Size([4, 96]), 
-    'attention_mask': torch.Size([4, 96])
+    'input_ids': torch.Size([4, 191]), 
+    'token_type_ids': torch.Size([4, 191]), 
+    'attention_mask': torch.Size([4, 191])
 }
-batch_y shape: torch.Size([4, 96])
-
 {'input_ids': tensor([
-        [ 101, 2600,  860,  677, 3341, 6432, 2523,  103,  511, 2523,  671, 5663,
-         8024, 6432, 2124, 7410, 1416, 8024, 3300,  763, 1296, 6404, 1348, 2523,
-         5042, 1296, 8024,  784,  720,  100,  117,  100,  119, 6432, 2124, 5042,
-         1296, 1416, 8024, 2523, 1914, 1296, 6404, 1348, 2523, 7410, 8024,  784,
-          720, 3661,  811, 7667, 5401, 2159, 2360, 8024, 5455, 7965, 1590, 4906,
-         1278, 4495,  722, 5102, 4638, 8024, 1353, 3633,  679, 2743, 4638, 4385,
-         1762,  738, 3766, 6381,  857, 8024, 2743, 4638, 6820, 3221, 2743, 4638,
-          511, 2600,  860, 6432, 3341, 8024, 3766,  784,  720, 2692, 2590,  102],
-        [ 101, 2600,  860,  677, 3341, 6432, 2523,  103,  511, 2791, 7313, 2397,
-         1112, 5653, 3302,  117, 4958, 3698, 3837, 1220,  738, 2523, 1962,  511,
-         3766, 3300,  679, 5679, 3698, 1456,  119,  119,  119, 4507,  754, 1905,
-          754, 7317, 2356, 1277,  117,  769, 6858, 3683, 6772, 3175,  912, 8024,
-          852, 1398, 3198,  738, 3300, 4157, 1648, 3325,  119,  119,  119,  102,
-            0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-            0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-            0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0],
-        [ 101, 2600,  860,  677, 3341, 6432, 2523,  103,  511, 2791, 7313, 3440,
-         3613, 1469, 4384, 1862, 5318, 2190,  126, 3215,  119, 7649, 5831, 6574,
-         7030, 2247,  754,  677, 5023,  119, 1372, 3221, 4895, 2458, 2356,  704,
-         2552, 6772, 6823,  119,  679, 6814, 6983, 2421, 3300, 4408, 6756,  119,
-         1963, 5543, 3022,  677, 4408, 6756,  117, 1156, 1282, 1059, 1282, 5401,
-          119,  102,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-            0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-            0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0],
-        [ 101, 2600,  860,  677, 3341, 6432, 2523,  103,  511, 2791, 7313, 1377,
-          809,  117, 4294, 1166, 4638, 1947, 2791,  117, 7478, 2382,  679, 7231,
-          117, 2218, 3221, 7623, 1324, 1922, 5552,  749,  117, 3193, 7623, 3018,
-         2533, 3766, 5517, 1366,  117,  102,    0,    0,    0,    0,    0,    0,
-            0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-            0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-            0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-            0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0]]), 
- 'token_type_ids': tensor(...), 
+        [  101,  2600,   860,   677,  3341,  6432,  2523,   103,   511,  1762,
+          5307,  1325,  6814,   749,  3739,  1366,  2161,  7667,  1469,  6205,
+          3862,  7649,  2421,  4638,  2521,  6878,  1400,  8024,  1744,  5549,
+          3187,  4542,  3221,   671,   702,  2661,  1599,   511,  2791,  7313,
+          2160,  3139,  3146,  3815,  8024,  6629,  4772,  5543,   924,  6395,
+          4717,   671,   702,  1962,  6230,   511,  3123,  1762,  1071,   800,
+          1814,  2356,  8024,  1377,  5543,  1744,  5549,  6820,  1916,   679,
+           677,  1724,  3215,  5277,  8024,   852,  1963,  3362,  6205,  3862,
+          7649,  2421,   722,  3837,  6963,  5543,  5050,  1724,  3215,  5277,
+          4638,  6413,  8024,  1744,  5549,  4696,  4638,  5050,  3221,  2595,
+           817,  3683,  6631,  7770,   749,   511,  1765,  4415,   855,  5390,
+           738,  1962,  8024,   817,  7178,   738,   912,  2139,  8024,  3221,
+          3634,  3613,  7942,  2255,   722,  6121,  3297,  4007,  2692,  4638,
+          6983,  2421,   511,   102,     0,     0,     0,     0,     0,     0,
+             0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
+             0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
+             0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
+             0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
+             0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
+             0],
+        [  101,  2600,   860,   677,  3341,  6432,  2523,   103,   511,  3209,
+          3209,   743,   749,   127,  3315,   741,  8024,  1372,  1168,   749,
+           124,  3315,  8024,   738,  3766,  3300,  6432,  3221,   784,   720,
+          1333,  1728,  8024,   809,  1400,  2582,   720,   928,  4638,  6814,
+          8043,  8043,  8043,  8043,  8043,  8043,  8043,  8043,  8043,  8043,
+          8043,   102,     0,     0,     0,     0,     0,     0,     0,     0,
+             0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
+             0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
+             0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
+             0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
+             0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
+             0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
+             0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
+             0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
+             0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
+             0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
+             0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
+             0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
+             0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
+             0],
+        [  101,  2600,   860,   677,  3341,  6432,  2523,   103,   511,   817,
+          3419,  1962,  1557,  8024,  3209,  3030,  4708,  4638,   511,  6929,
+           763,  6163,   679,   677,  8766,  4638,  4692,  4692,  2769,  6432,
+          4638,   511,  1168,  9324,   934,  3121, 10785,  9702,  1168, 11319,
+          4197,  1400,  2823,   671,  2476,  2128,  6163,  4276,  3315,  4638,
+          8766,  8024,  6822,  1343,  4684,  2970, 10843,  2957,  2792,  3300,
+          1146,  1277,  4197,  1400,  7028,  3173,  1146,  1277,  2128,  6163,
+          1315,  1377,   511,  2823,   671,  2476, 10797,  4638,  8766,  8024,
+          6822,  1343,   886,  4500, 10797,  4638,  1146,  1277,  1216,  5543,
+          4684,  2970,  1146,  1277,  2128,  6163,  1315,  1377,   511,  1963,
+          3362,   872,  4801,  3221,  6206, 10785,  9702,  4638,  6413,  8024,
+          1343,  2823,   671,   702, 10785,  9702,   118, 11319,  4638,  7721,
+          1220,  8024,  2128,  6163,  1962,  1400,  1086,  2128,  6163,  6821,
+           702,  7721,  1220,  2218,  1377,   809,  6760,  2940,  1168, 10785,
+          9702,  1343,   511,   102,     0,     0,     0,     0,     0,     0,
+             0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
+             0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
+             0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
+             0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
+             0],
+        [  101,  2600,   860,   677,  3341,  6432,  2523,   103,   511,   671,
+          4684,  1599,  3614,  6929,   702,  2399,   807,  4638,   782,  4289,
+          3125,   752,  2600,   833,  3300,  6929,   763,   679,  1728,  4535,
+          2501,  4384,  1862,  5445,  3121,  1359,  4638,  5283,  5679,  3315,
+          2595,  6929,  3416,  4638,  4696,  2658,  1963,   791,  4692,  3341,
+          4994,  3221,  2208,   722,  1348,  2208,  1728,  1327,  2829,  5445,
+          4397,  6586,  6821,  3416,  4638,  4263,  2658,  2215,  1071,  3918,
+          1331,  1265,  6237,   679,  2458,  4638,  3849,  4164,  2697,  6375,
+           782,  3617,  5387,   679,  5543,  7474,  4904,  2208,  6387,  4638,
+          2697,  2595,   704,  2881,  3300,  3291,  1914,  1728,  4836,  7410,
+          5445,  4495,  1139,  4638,  4415,  2595,  6821,  3416,  4638,  1957,
+          2094,  1780,  2137,  3300,   928,  2573,  1762,  2496,  3198,  4638,
+          4852,   833,  7027,  2418,  6421,  2400,   679,  2208,  6224,  1377,
+          3221,  2769,   679,  4761,  6887,  1008,  5439,   676,  6821,  3416,
+          4638,  4511,   782,  4590,  2552,  3300,  2857,  2496,  1294,  2209,
+           679,  1127,  1348,  1398,  3416,  4638,  1780,  2137,  6821,   702,
+           686,  4518,   677,  6820,   833,  3300,  1126,   702,  8043,   671,
+           702,  1957,   782,  4638,   671,  4495,  7027,  2881,  3300,  6814,
+          6821,  3416,  4638,  4511,  2094,  1923,  1908,   862,  3724,  8043,
+           102]]), 
+ 'token_type_ids': tensor([
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]), 
  'attention_mask': tensor([
         [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
          1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
          1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
          1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
          1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
          1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0,
          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])}
-
-tensor([[-100, -100, -100, -100, -100, -100, -100, 2345, -100, -100, -100, -100,
-         -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100,
-         -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100,
-         -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100,
-         -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100,
-         -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100,
-         -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100,
-         -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100],
-        [-100, -100, -100, -100, -100, -100, -100, 1962, -100, -100, -100, -100,
-         -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100,
-         -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100,
-         -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100,
-         -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100,
-         -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100,
-         -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100,
-         -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100],
-        [-100, -100, -100, -100, -100, -100, -100, 1962, -100, -100, -100, -100,
-         -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100,
-         -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100,
-         -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100,
-         -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100,
-         -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100,
-         -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100,
-         -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100],
-        [-100, -100, -100, -100, -100, -100, -100, 1962, -100, -100, -100, -100,
-         -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100,
-         -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100,
-         -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100,
-         -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100,
-         -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100,
-         -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100,
-         -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100, -100]])
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]])}
+tensor([7, 7, 7, 7])
+tensor([1, 0, 1, 1])
 ```
 
-可以看到，DataLoader 按照我们设置的 batch size 每次对 4 个样本进行编码，将 token 序列填充到了相同的长度。标签中 `[MASK]` token 对应的索引都转换为了情感极性对应“好”或“差”的 token ID。
-
-> 这里我们对所有样本都应用相同的模板，添加相同的“前缀”，因此 `[MASK]` token 的位置其实是固定的，我们不必对每个样本都单独计算 `[MASK]`对应的 token 位置。
->
-> 在实际操作中，我们既可以对样本应用不同的模板，也可以将 `[MASK]` 插入到样本中的任意位置，甚至模板中可以包含多个 `[MASK]`，需要根据实际情况对数据预处理进行调整。
+可以看到，DataLoader 按照我们设置的 batch size 每次对 4 个样本进行编码，将 token 序列填充到了相同的长度。这里由于我们对所有样本都添加相同的“前缀”，因此 `[MASK]` token 的索引都为 7。
 
 ## 2. 训练模型
 
@@ -300,6 +366,16 @@ from torch import nn
 from transformers.activations import ACT2FN
 from transformers import AutoConfig
 from transformers import BertPreTrainedModel, BertModel
+
+def batched_index_select(input, dim, index):
+    for i in range(1, len(input.shape)):
+        if i != dim:
+            index = index.unsqueeze(i)
+    expanse = list(input.shape)
+    expanse[0] = -1
+    expanse[dim] = -1
+    index = index.expand(expanse)
+    return torch.gather(input, dim, index)
 
 class BertPredictionHeadTransform(nn.Module):
     def __init__(self, config):
@@ -347,12 +423,15 @@ class BertForPrompt(BertPreTrainedModel):
         # Initialize weights and apply final processing
         self.post_init()
     
-    def forward(self, x):
-        bert_output = self.bert(**x)
+    def forward(self, batch_x, batch_mask_idx, label_word_id):
+        bert_output = self.bert(**batch_x)
         sequence_output = bert_output.last_hidden_state
-        prediction_scores = self.cls(sequence_output)
-        return prediction_scores
+        batch_mask_reps = batched_index_select(sequence_output, 1, batch_mask_idx.unsqueeze(-1)).squeeze(1)
+        prediction_scores = self.cls(batch_mask_reps)
+        return prediction_scores[:, label_word_id]
 
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+print(f'Using {device} device')
 config = AutoConfig.from_pretrained(checkpoint)
 model = BertForPrompt.from_pretrained(checkpoint, config=config).to(device)
 print(model)
@@ -375,26 +454,29 @@ BertForPrompt(
 )
 ```
 
-注意，这里为了能够加载预训练好的 MLM head 参数，我们严格按照 Transformers 库中的模型结构来构建 `BertForPrompt` 模型。可以看到，BERT 自带的 MLM head 由两个部分组成：首先对所有 token 进行一个 $768 \times 768$ 的非线性映射（包括激活函数和 LayerNorm），然后使用一个 $768\times 21128$ 的线性映射预测词表中每个 token 的分数。
+注意，这里为了能够加载预训练好的 MLM head 参数，我们按照 Transformers 库中的模型结构来构建 `BertForPrompt` 模型。可以看到，BERT 自带的 MLM head 由两个部分组成：首先对所有 token 进行一个 $768 \times 768$ 的非线性映射（包括激活函数和 LayerNorm），然后使用一个 $768\times 21128$ 的线性映射预测词表中每个 token 的分数。
+
+为了让模型适配我们的任务，这里首先通过 `batched_index_select` 函数从 BERT 的输出序列中抽取出 $\texttt{[MASK]}$ token 对应的表示，在运用 MLM head 预测出该 $\texttt{[MASK]}$ token 对应词表中每个 token 的分数之后，我们只返回“差”和“好”这两个标签词的分数用于分类。
 
 为了测试模型的操作是否符合预期，我们尝试将一个 batch 的数据送入模型：
 
 ```python
-outputs = model(batch_X)
+batch_X, batch_mask_idx, label_word_id, batch_y = next(iter(train_dataloader))
+outputs = model(batch_X, batch_mask_idx, label_word_id)
 print(outputs.shape)
 ```
 
 ```
-torch.Size([4, 96, 21128])
+torch.Size([4, 2])
 ```
 
-对于 batch 内 4 个都被填充到长度为 $96$ 的样本，模型对每个 token 都应该输出一个词表大小的向量（对应词表中每个词语的预测 logits 值），因此这里模型的输出尺寸 $4\times 96\times 21128$ 完全符合预期。
+模型对每个样本都应该输出“差”和“好”这两个标签词的预测 logits 值（分别对应“消极”和“积极”两个类别），因此这里模型的输出尺寸 $4×2$  完全符合预期。
 
-### 训练循环
+### 优化模型参数
 
 与之前一样，我们将每一轮 Epoch 分为“训练循环”和“验证/测试循环”，在训练循环中计算损失、优化模型参数，在验证/测试循环中评估模型性能。下面我们首先实现训练循环。
 
-MLM 任务计算损失的方式与序列标注任务几乎完全一致，同样也是在标签序列和预测序列之间计算交叉熵损失，唯一的区别是 MLM 任务只需要计算 `[MASK]` token 位置的损失：
+因为对标签词的预测实际上就是对类别的预测，所以这里模型的输出与[同义句判断任务](https://transformers.run/intro/2021-12-17-transformers-note-4/)中介绍过的普通文本分类模型完全一致，损失也同样是通过在类别预测和答案标签之间计算交叉熵：
 
 ```python
 def train_loop(dataloader, model, loss_fn, optimizer, lr_scheduler, epoch, total_loss):
@@ -403,10 +485,10 @@ def train_loop(dataloader, model, loss_fn, optimizer, lr_scheduler, epoch, total
     finish_batch_num = (epoch-1) * len(dataloader)
     
     model.train()
-    for batch, (X, y) in enumerate(dataloader, start=1):
-        X, y = X.to(device), y.to(device)
-        predictions = model(X)
-        loss = loss_fn(predictions.view(-1, config.vocab_size), y.view(-1))
+    for batch, (batch_X, batch_mask_idx, label_word_id, batch_y) in enumerate(dataloader, start=1):
+        batch_X, batch_mask_idx, batch_y = batch_X.to(device), batch_mask_idx.to(device), batch_y.to(device)
+        predictions = model(batch_X, batch_mask_idx, label_word_id)
+        loss = loss_fn(predictions, batch_y)
 
         optimizer.zero_grad()
         loss.backward()
@@ -419,108 +501,45 @@ def train_loop(dataloader, model, loss_fn, optimizer, lr_scheduler, epoch, total
     return total_loss
 ```
 
-### 后处理
+验证/测试循环负责评估模型的性能。对于分类任务最常见的就是通过精确率、召回率、F1值 (P / R / F1) 指标来评估每个类别的预测性能，然后再通过宏/微 F1 值 (Macro-F1/Micro-F1) 来评估整体分类性能。
 
-因为我们最终需要的是情感标签，所以在编写“验证/测试循环”之前，我们先讨论一下 Prompt 模型的后处理——怎么将模型的输出转换为情感标签。
-
-上面我们介绍过，在 MLM 模型的输出中，我们只关注 `[MASK]` token 的预测值，并且只关心其中特定几个表意词的概率值。例如对于情感分析任务，我们只关心预测出的“好”和“坏”两个词的 logit 值的谁更大，如果“好”大于“差”对应的情感标签就是积极，反之就是消极。
-
-因为 Prompt 方法可以在不微调模型的情况下进行预测，这里我们使用 BERT 模型直接对验证集上的前 12 个样本进行预测以展示后处理过程：
-
-```python
-valid_data = ChnSentiCorp('data/ChnSentiCorp/dev.txt')
-small_eval_set = [valid_data[idx] for idx in range(12)]
-
-checkpoint = "bert-base-chinese"
-tokenizer = AutoTokenizer.from_pretrained(checkpoint)
-eval_set = DataLoader(small_eval_set, batch_size=4, shuffle=False, collate_fn=collote_fn)
-
-import torch
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
-
-from transformers import AutoModelForMaskedLM
-model = AutoModelForMaskedLM.from_pretrained(checkpoint)
-```
-
-接下来，与之前任务中的验证/测试循环一样，在 `torch.no_grad()` 上下文管理器下，我们使用模型对所有样本进行预测，并且汇总预测出的“好”和“差” token 对应的 logits 值：
-
-```python
-pos_id = tokenizer.convert_tokens_to_ids("好")
-neg_id = tokenizer.convert_tokens_to_ids("差")
-results = []
-model.eval()
-for batch_data, _ in eval_set:
-    batch_data = batch_data.to(device)
-    with torch.no_grad():
-        token_logits = model(**batch_data).logits
-    mask_token_indexs = torch.where(batch_data["input_ids"] == tokenizer.mask_token_id)[1]
-    for s_idx, mask_idx in enumerate(mask_token_indexs):
-        results.append(token_logits[s_idx, mask_idx, [neg_id, pos_id]].cpu().numpy())
-```
-
-最后我们遍历数据集中的样本，使用 `softmax` 函数将 logits 值转换为概率值，并且同步打印预测和标注结果来进行对比：
-
-```python
-true_labels, true_predictions = [], []
-for s_idx, example in enumerate(small_eval_set):
-    comment = example['comment']
-    label = example['label']
-    probs = torch.nn.functional.softmax(torch.tensor(results[s_idx]), dim=-1)
-    print(comment, label)
-    print('pred:', {'0': probs[0].item(), '1': probs[1].item()})
-    true_labels.append(int(label))
-    true_predictions.append(0 if probs[0] > probs[1] else 1)
-```
-
-```
-這間酒店環境和服務態度亦算不錯,但房間空間太小~~不宣容納太大件行李~~且房間格調還可以~~ 中餐廳的廣東點心不太好吃~~要改善之~~~~但算價錢平宜~~可接受~~ 西餐廳格調都很好~~但吃的味道一般且令人等得太耐了~~要改善之~~ 1
-pred: {'0': 0.0033), '1': 0.9967}
-<荐书> 推荐所有喜欢<红楼>的红迷们一定要收藏这本书,要知道当年我听说这本书的时候花很长时间去图书馆找和借都没能如愿,所以这次一看到当当有,马上买了,红迷们也要记得备货哦! 1
-pred: {'0': 0.0003), '1': 0.9997}
-...
-```
-
-对于分类任务最常见的就是通过精确率、召回率、F1值 (P / R / F1) 指标来评估每个类别的预测性能，然后再通过宏/微 F1 值 (Macro-F1/Micro-F1) 来评估整体分类性能。这里我们借助机器学习包 [sklearn](https://scikit-learn.org/stable/#) 提供的 `classification_report` 函数来输出这些指标：
+这里我们借助机器学习包 [sklearn](https://scikit-learn.org/stable/#) 提供的 `classification_report` 函数来输出这些指标，例如：
 
 ```python
 from sklearn.metrics import classification_report
-print(classification_report(true_labels, true_predictions, output_dict=False))
+
+y_true = [1, 1, 0, 1, 2, 1, 0, 2, 1, 1, 0, 1, 0]
+y_pred = [1, 0, 0, 1, 2, 0, 1, 1, 1, 0, 0, 1, 0]
+
+print(classification_report(y_true, y_pred, output_dict=False))
 ```
 
 ```
               precision    recall  f1-score   support
 
-           0       0.00      0.00      0.00         3
-           1       0.75      1.00      0.86         9
+           0       0.50      0.75      0.60         4
+           1       0.67      0.57      0.62         7
+           2       1.00      0.50      0.67         2
 
-    accuracy                           0.75        12
-   macro avg       0.38      0.50      0.43        12
-weighted avg       0.56      0.75      0.64        12
+    accuracy                           0.62        13
+   macro avg       0.72      0.61      0.63        13
+weighted avg       0.67      0.62      0.62        13
 ```
 
-可以看到，这里模型将 12 个样本都预测为了“积极”类（标签 1），因此该类别的召回率为 100%，而“消极”类的指标都为 0，代表整体性能的 Macro-F1/Micro-F1 值只有 0.43 和 0.64。
-
-### 测试循环
-
-熟悉了后处理操作之后，编写验证/测试循环就很简单了，只需对上面的这些步骤稍作整合即可：
+因此在验证/测试循环中，我们只需要汇总模型对所有样本的预测结果和答案标签，然后送入到 `classification_report` 中计算各项分类指标：
 
 ```python
 from sklearn.metrics import classification_report
 
-def test_loop(dataloader, dataset, model):
-    results = []
+def test_loop(dataloader, model):
+    true_labels, predictions = [], []
     model.eval()
-    for batch_data, _ in tqdm(dataloader):
-        batch_data = batch_data.to(device)
-        with torch.no_grad():
-            token_logits = model(batch_data)
-        mask_token_indexs = torch.where(batch_data["input_ids"] == tokenizer.mask_token_id)[1]
-        for s_idx, mask_idx in enumerate(mask_token_indexs):
-            results.append(token_logits[s_idx, mask_idx, [neg_id, pos_id]].cpu().numpy())
-    true_labels = [
-        int(dataset[s_idx]['label']) for s_idx in range(len(dataset))
-    ]
-    predictions = np.asarray(results).argmax(axis=-1).tolist()
+    with torch.no_grad():
+        for batch_X, batch_mask_idx, label_word_id, batch_y in dataloader:
+            true_labels += batch_y.numpy().tolist()
+            batch_X, batch_mask_idx = batch_X.to(device), batch_mask_idx.to(device)
+            pred = model(batch_X, batch_mask_idx, label_word_id)
+            predictions += pred.argmax(dim=-1).cpu().numpy().tolist()
     metrics = classification_report(true_labels, predictions, output_dict=True)
     pos_p, pos_r, pos_f1 = metrics['1']['precision'], metrics['1']['recall'], metrics['1']['f1-score']
     neg_p, neg_r, neg_f1 = metrics['0']['precision'], metrics['0']['recall'], metrics['0']['f1-score']
@@ -530,7 +549,7 @@ def test_loop(dataloader, dataset, model):
     return metrics
 ```
 
-为了方便后续保存验证集上最好的模型，这里我们还在验证/测试循环中返回评估结果。
+为了方便后续保存验证集上最好的模型，这里我们还返回了评估结果。
 
 ### 保存模型
 
@@ -556,7 +575,7 @@ best_f1_score = 0.
 for t in range(epoch_num):
     print(f"Epoch {t+1}/{epoch_num}\n" + 30 * "-")
     total_loss = train_loop(train_dataloader, model, loss_fn, optimizer, lr_scheduler, t+1, total_loss)
-    valid_scores = test_loop(valid_dataloader, valid_data, model)
+    valid_scores = test_loop(valid_dataloader, model)
     macro_f1, micro_f1 = valid_scores['macro avg']['f1-score'], valid_scores['weighted avg']['f1-score']
     f1_score = (macro_f1 + micro_f1) / 2
     if f1_score > best_f1_score:
@@ -575,7 +594,7 @@ print("Done!")
 test_data = ChnSentiCorp('data/ChnSentiCorp/test.txt')
 test_dataloader = DataLoader(test_data, batch_size=4, shuffle=False, collate_fn=collote_fn)
 
-test_loop(test_dataloader, test_data, model)
+test_loop(test_dataloader, model)
 ```
 
 ```
@@ -652,31 +671,40 @@ test_data = ChnSentiCorp('data/ChnSentiCorp/test.txt')
 checkpoint = "bert-base-chinese"
 tokenizer = AutoTokenizer.from_pretrained(checkpoint)
 
-pos_id = tokenizer.convert_tokens_to_ids(pos_token)
-neg_id = tokenizer.convert_tokens_to_ids(neg_token)
+pos_id = tokenizer.convert_tokens_to_ids("好")
+neg_id = tokenizer.convert_tokens_to_ids("差")
 
 def collote_fn(batch_samples):
-    batch_sentence, batch_senti  = [], []
+    batch_sentences, batch_labels  = [], []
     for sample in batch_samples:
-        batch_sentence.append(prompt(sample['comment']))
-        batch_senti.append(sample['label'])
+        batch_sentences.append(prompt(sample['comment']))
+        batch_labels.append(int(sample['label']))
     batch_inputs = tokenizer(
-        batch_sentence, 
-        max_length=max_length, 
+        batch_sentences, 
         padding=True, 
         truncation=True, 
         return_tensors="pt"
     )
-    batch_label = np.full(batch_inputs['input_ids'].shape, -100)
-    for s_idx, sentence in enumerate(batch_sentence):
-        encoding = tokenizer(sentence, max_length=max_length, truncation=True)
+    batch_mask_idx, label_word_id = [], [neg_id, pos_id]
+    for sentence in batch_sentences:
+        encoding = tokenizer(sentence, truncation=True)
         mask_idx = encoding.char_to_token(sentence.find('[MASK]'))
-        batch_label[s_idx][mask_idx] = pos_id if batch_senti[s_idx] == '1' else neg_id
-    return batch_inputs, torch.tensor(batch_label)
+        batch_mask_idx.append(mask_idx)
+    return batch_inputs, torch.tensor(batch_mask_idx), label_word_id, torch.tensor(batch_labels)
 
 train_dataloader = DataLoader(train_data, batch_size=4, shuffle=True, collate_fn=collote_fn)
 valid_dataloader = DataLoader(valid_data, batch_size=4, shuffle=False, collate_fn=collote_fn)
 test_dataloader = DataLoader(test_data, batch_size=4, shuffle=False, collate_fn=collote_fn)
+
+def batched_index_select(input, dim, index):
+    for i in range(1, len(input.shape)):
+        if i != dim:
+            index = index.unsqueeze(i)
+    expanse = list(input.shape)
+    expanse[0] = -1
+    expanse[dim] = -1
+    index = index.expand(expanse)
+    return torch.gather(input, dim, index)
 
 class BertPredictionHeadTransform(nn.Module):
     def __init__(self, config):
@@ -724,11 +752,12 @@ class BertForPrompt(BertPreTrainedModel):
         # Initialize weights and apply final processing
         self.post_init()
     
-    def forward(self, x):
-        bert_output = self.bert(**x)
+    def forward(self, batch_x, batch_mask_idx, label_word_id):
+        bert_output = self.bert(**batch_x)
         sequence_output = bert_output.last_hidden_state
-        prediction_scores = self.cls(sequence_output)
-        return prediction_scores
+        batch_mask_reps = batched_index_select(sequence_output, 1, batch_mask_idx.unsqueeze(-1)).squeeze(1)
+        prediction_scores = self.cls(batch_mask_reps)
+        return prediction_scores[:, label_word_id]
 
 config = AutoConfig.from_pretrained(checkpoint)
 model = BertForPrompt.from_pretrained(checkpoint, config=config).to(device)
@@ -739,10 +768,10 @@ def train_loop(dataloader, model, loss_fn, optimizer, lr_scheduler, epoch, total
     finish_batch_num = (epoch-1) * len(dataloader)
     
     model.train()
-    for batch, (X, y) in enumerate(dataloader, start=1):
-        X, y = X.to(device), y.to(device)
-        predictions = model(X)
-        loss = loss_fn(predictions.view(-1, config.vocab_size), y.view(-1))
+    for batch, (batch_X, batch_mask_idx, label_word_id, batch_y) in enumerate(dataloader, start=1):
+        batch_X, batch_mask_idx, batch_y = batch_X.to(device), batch_mask_idx.to(device), batch_y.to(device)
+        predictions = model(batch_X, batch_mask_idx, label_word_id)
+        loss = loss_fn(predictions, batch_y)
 
         optimizer.zero_grad()
         loss.backward()
@@ -754,20 +783,15 @@ def train_loop(dataloader, model, loss_fn, optimizer, lr_scheduler, epoch, total
         progress_bar.update(1)
     return total_loss
 
-def test_loop(dataloader, dataset, model):
-    results = []
+def test_loop(dataloader, model):
+    true_labels, predictions = [], []
     model.eval()
-    for batch_data, _ in tqdm(dataloader):
-        batch_data = batch_data.to(device)
-        with torch.no_grad():
-            token_logits = model(batch_data)
-        mask_token_indexs = torch.where(batch_data["input_ids"] == tokenizer.mask_token_id)[1]
-        for s_idx, mask_idx in enumerate(mask_token_indexs):
-            results.append(token_logits[s_idx, mask_idx, [neg_id, pos_id]].cpu().numpy())
-    true_labels = [
-        int(dataset[s_idx]['label']) for s_idx in range(len(dataset))
-    ]
-    predictions = np.asarray(results).argmax(axis=-1).tolist()
+    with torch.no_grad():
+        for batch_X, batch_mask_idx, label_word_id, batch_y in dataloader:
+            true_labels += batch_y.numpy().tolist()
+            batch_X, batch_mask_idx = batch_X.to(device), batch_mask_idx.to(device)
+            pred = model(batch_X, batch_mask_idx, label_word_id)
+            predictions += pred.argmax(dim=-1).cpu().numpy().tolist()
     metrics = classification_report(true_labels, predictions, output_dict=True)
     pos_p, pos_r, pos_f1 = metrics['1']['precision'], metrics['1']['recall'], metrics['1']['f1-score']
     neg_p, neg_r, neg_f1 = metrics['0']['precision'], metrics['0']['recall'], metrics['0']['f1-score']
@@ -790,7 +814,7 @@ best_f1_score = 0.
 for t in range(epoch_num):
     print(f"Epoch {t+1}/{epoch_num}\n" + 30 * "-")
     total_loss = train_loop(train_dataloader, model, loss_fn, optimizer, lr_scheduler, t+1, total_loss)
-    valid_scores = test_loop(valid_dataloader, valid_data, model)
+    valid_scores = test_loop(valid_dataloader, model)
     macro_f1, micro_f1 = valid_scores['macro avg']['f1-score'], valid_scores['weighted avg']['f1-score']
     f1_score = (macro_f1 + micro_f1) / 2
     if f1_score > best_f1_score:
@@ -808,28 +832,25 @@ Using cuda device
 
 Epoch 1/3
 ------------------------------
-loss: 0.258182: 100%|█████████████████| 2400/2400 [03:05<00:00, 12.96it/s]
-100%|█████████████████████████████████| 300/300 [00:06<00:00, 44.98it/s]
-pos: 90.81 / 94.94 / 92.83, neg: 94.83 / 90.61 / 92.67
-Macro-F1: 92.75 Micro-F1: 92.75
+loss: 0.250585: 100%|█████████████████| 2400/2400 [03:02<00:00, 13.17it/s]
+pos: 89.83 / 95.28 / 92.47, neg: 95.10 / 89.46 / 92.19
+Macro-F1: 92.33 Micro-F1: 92.33
 
 saving new weights...
 
 Epoch 2/3
 ------------------------------
-loss: 0.190014: 100%|█████████████████| 2400/2400 [03:04<00:00, 12.98it/s]
-100%|█████████████████████████████████| 300/300 [00:06<00:00, 44.79it/s]
-pos: 94.88 / 93.76 / 94.32, neg: 93.97 / 95.06 / 94.51
-Macro-F1: 94.41 Micro-F1: 94.42
+loss: 0.186270: 100%|█████████████████| 2400/2400 [02:52<00:00, 13.92it/s]
+pos: 97.14 / 91.74 / 94.36, neg: 92.34 / 97.36 / 94.79
+Macro-F1: 94.58 Micro-F1: 94.58
 
 saving new weights...
 
 Epoch 3/3
 ------------------------------
-loss: 0.143803: 100%|█████████████████| 2400/2400 [03:04<00:00, 13.03it/s]
-100%|█████████████████████████████████| 300/300 [00:06<00:00, 44.29it/s]
-pos: 96.05 / 94.44 / 95.24, neg: 94.65 / 96.21 / 95.42
-Macro-F1: 95.33 Micro-F1: 95.33
+loss: 0.141027: 100%|█████████████████| 2400/2400 [02:52<00:00, 13.87it/s]
+pos: 95.53 / 93.76 / 94.64, neg: 94.01 / 95.72 / 94.86
+Macro-F1: 94.75 Micro-F1: 94.75
 
 saving new weights...
 
@@ -839,9 +860,9 @@ Done!
 可以看到，随着训练的进行，模型在验证集上的 Macro-F1 和 Micro-F1 值都在不断提升。因此 3 轮 Epoch 结束后，会在目录下保存 3 个模型权重：
 
 ```
-epoch_1_valid_macrof1_92.749_microf1_92.748_model_weights.bin
-epoch_2_valid_macrof1_94.415_microf1_94.416_model_weights.bin
-epoch_3_valid_macrof1_95.331_microf1_95.333_model_weights.bin
+epoch_1_valid_macrof1_92.331_microf1_92.329_model_weights.bin
+epoch_2_valid_macrof1_94.575_microf1_94.577_model_weights.bin
+epoch_3_valid_macrof1_94.748_microf1_94.749_model_weights.bin
 ```
 
 至此，我们对 Prompt 情感分析模型的训练就完成了。
@@ -851,32 +872,27 @@ epoch_3_valid_macrof1_95.331_microf1_95.333_model_weights.bin
 训练完成后，我们加载在验证集上性能最优的模型权重，汇报其在测试集上的性能，并且将模型的预测结果保存到文件中。
 
 ```python
-model.load_state_dict(torch.load('epoch_3_valid_macrof1_95.331_microf1_95.333_model_weights.bin'))
+import json
+
+model.load_state_dict(torch.load('epoch_3_valid_macrof1_94.748_microf1_94.749_model_weights.bin'))
 
 model.eval()
 with torch.no_grad():
     print('evaluating on test set...')
-    results = []
-    for batch_data, _ in tqdm(test_dataloader):
-        batch_data = batch_data.to(device)
-        with torch.no_grad():
-            token_logits = model(batch_data)
-        mask_token_indexs = torch.where(batch_data["input_ids"] == tokenizer.mask_token_id)[1]
-        for s_idx, mask_idx in enumerate(mask_token_indexs):
-            results.append(token_logits[s_idx, mask_idx, [neg_id, pos_id]].cpu().numpy())
-    true_labels = [
-        int(test_data[s_idx]['label']) for s_idx in range(len(test_data))
-    ]
-    predictions = np.asarray(results).argmax(axis=-1).tolist()
+    true_labels, predictions, probs = [], [], []
+    for batch_X, batch_mask_idx, label_word_id, batch_y in tqdm(test_dataloader):
+        true_labels += batch_y.numpy().tolist()
+        batch_X, batch_mask_idx = batch_X.to(device), batch_mask_idx.to(device)
+        pred = model(batch_X, batch_mask_idx, label_word_id)
+        predictions += pred.argmax(dim=-1).cpu().numpy().tolist()
+        probs += torch.nn.functional.softmax(pred, dim=-1)
     save_resluts = []
     for s_idx in tqdm(range(len(test_data))):
-        comment, label = test_data[s_idx]['comment'], test_data[s_idx]['label']
-        probs = torch.nn.functional.softmax(torch.tensor(results[s_idx]), dim=-1)
         save_resluts.append({
-            "comment": comment, 
-            "label": label, 
-            "pred": '1' if probs[1] > probs[0] else '0', 
-            "prediction": {'0': probs[0].item(), '1': probs[1].item()}
+            "comment": test_data[s_idx]['comment'], 
+            "label": true_labels[s_idx], 
+            "pred": predictions[s_idx], 
+            "prob": {'neg': probs[s_idx][0].item(), 'pos': probs[s_idx][1].item()}
         })
     metrics = classification_report(true_labels, predictions, output_dict=True)
     pos_p, pos_r, pos_f1 = metrics['1']['precision'], metrics['1']['recall'], metrics['1']['f1-score']
@@ -892,24 +908,24 @@ with torch.no_grad():
 
 ```
 evaluating on test set...
-100%|█████████████████████████████████| 300/300 [00:06<00:00, 44.09it/s]
-100%|█████████████████████████████████| 1200/1200 [00:00<00:00, 47667.51it/s]
-pos: 96.46 / 94.08 / 95.25, neg: 94.07 / 96.45 / 95.25
-Macro-F1: 95.25 Micro-F1: 95.25
+100%|█████████████████████████████████| 300/300 [00:06<00:00, 49.36it/s]
+100%|█████████████████████████████████| 1200/1200 [00:00<00:00, 33764.90it/s]
+pos: 96.79 / 94.24 / 95.50, neg: 94.24 / 96.79 / 95.50
+Macro-F1: 95.50 Micro-F1: 95.50
 
 saving predicted results...
 ```
 
-可以看到，经过微调，模型在测试集上的 Macro-F1 值从 43.02 提升到 95.25，Micro-F1 值从 43.37 提升到 95.25，证明了我们对模型的微调是成功的。
+可以看到，经过微调，模型在测试集上的 Macro-F1 值从 43.02 提升到 95.5，Micro-F1 值从 43.37 提升到 95.5，证明了我们对模型的微调是成功的。
 
 我们打开保存预测结果的 *test_data_pred.json*，其中每一行对应一个样本，`comment` 对应评论，`label` 对应标注标签，`pred` 对应预测出的标签，`prediction` 对应具体预测出的概率值。
 
 ```
 {
     "comment": "交通方便；环境很好；服务态度很好 房间较小", 
-    "label": "1", 
-    "pred": "1", 
-    "prediction": {"0": 0.002953010145574808, "1": 0.9970470070838928}
+    "label": 1, 
+    "pred": 1, 
+    "prob": {"neg": 0.001537947915494442, "pos": 0.9984620809555054}
 }
 ...
 ```

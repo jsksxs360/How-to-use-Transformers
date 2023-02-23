@@ -1,6 +1,5 @@
 from torch.utils.data import Dataset, DataLoader
 import numpy as np
-import torch
 
 PROMPT = lambda x: '总体上来说很[MASK]。' + x
 POS_TOKEN, NEG_TOKEN = '好', '差'
@@ -33,25 +32,27 @@ def get_dataLoader(args, dataset, tokenizer, batch_size=None, shuffle=False):
     neg_id = tokenizer.convert_tokens_to_ids(NEG_TOKEN)
     
     def collote_fn(batch_samples):
-        batch_sentence, batch_senti  = [], []
+        batch_sentences, batch_labels  = [], []
         for sample in batch_samples:
-            batch_sentence.append(PROMPT(sample['comment']))
-            batch_senti.append(sample['label'])
+            batch_sentences.append(PROMPT(sample['comment']))
+            batch_labels.append(int(sample['label']))
         batch_inputs = tokenizer(
-            batch_sentence, 
+            batch_sentences, 
             max_length=args.max_length, 
             padding=True, 
             truncation=True, 
             return_tensors="pt"
         )
-        batch_label = np.full(batch_inputs['input_ids'].shape, -100)
-        for s_idx, sentence in enumerate(batch_sentence):
-            encoding = tokenizer(sentence, max_length=args.max_length, truncation=True)
+        batch_mask_idx, label_word_id = [], [neg_id, pos_id]
+        for sentence in batch_sentences:
+            encoding = tokenizer(sentence, truncation=True)
             mask_idx = encoding.char_to_token(sentence.find('[MASK]'))
-            batch_label[s_idx][mask_idx] = pos_id if batch_senti[s_idx] == '1' else neg_id
+            batch_mask_idx.append(mask_idx)
         return {
             'batch_inputs': batch_inputs, 
-            'labels': batch_label
+            'batch_mask_idx': batch_mask_idx, 
+            'label_word_id': label_word_id, 
+            'labels': batch_labels
         }
     
     return DataLoader(dataset, batch_size=(batch_size if batch_size else args.batch_size), shuffle=shuffle, 

@@ -4,6 +4,16 @@ from torch.nn import CrossEntropyLoss
 from transformers import BertPreTrainedModel, BertModel
 from transformers.activations import ACT2FN
 
+def batched_index_select(input, dim, index):
+    for i in range(1, len(input.shape)):
+        if i != dim:
+            index = index.unsqueeze(i)
+    expanse = list(input.shape)
+    expanse[0] = -1
+    expanse[dim] = -1
+    index = index.expand(expanse)
+    return torch.gather(input, dim, index)
+
 class BertPredictionHeadTransform(nn.Module):
     def __init__(self, config):
         super().__init__()
@@ -49,13 +59,15 @@ class BertForPrompt(BertPreTrainedModel):
         self.cls = BertOnlyMLMHead(config)
         self.post_init()
     
-    def forward(self, batch_inputs, labels=None):
+    def forward(self, batch_inputs, batch_mask_idx, label_word_id, labels=None):
         bert_output = self.bert(**batch_inputs)
         sequence_output = bert_output.last_hidden_state
-        predictions = self.cls(sequence_output)
+        batch_mask_reps = batched_index_select(sequence_output, 1, batch_mask_idx.unsqueeze(-1)).squeeze(1)
+        prediction_scores = self.cls(batch_mask_reps)
+        predictions = prediction_scores[:, label_word_id]
 
         loss = None
         if labels is not None:
             loss_fct = CrossEntropyLoss()
-            loss = loss_fct(predictions.view(-1, self.config.vocab_size), labels.view(-1))
+            loss = loss_fct(predictions, labels)
         return loss, predictions

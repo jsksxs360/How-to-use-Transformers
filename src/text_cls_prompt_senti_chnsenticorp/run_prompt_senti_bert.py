@@ -1,7 +1,6 @@
 import os
 import json
 import logging
-import numpy as np
 from tqdm.auto import tqdm
 import torch
 from transformers import AutoConfig, AutoTokenizer
@@ -26,6 +25,8 @@ def to_device(args, batch_data):
             new_batch_data[k] = {
                 k_: v_.to(args.device) for k_, v_ in v.items()
             }
+        elif k == 'label_word_id':
+            new_batch_data[k] = v
         else:
             new_batch_data[k] = torch.tensor(v).to(args.device)
     return new_batch_data
@@ -51,23 +52,16 @@ def train_loop(args, dataloader, model, optimizer, lr_scheduler, epoch, total_lo
         progress_bar.update(1)
     return total_loss
 
-def test_loop(args, dataloader, dataset, model, tokenizer):
-    results = []
-    pos_id = tokenizer.convert_tokens_to_ids(POS_TOKEN)
-    neg_id = tokenizer.convert_tokens_to_ids(NEG_TOKEN)
+def test_loop(args, dataloader, model):
+    true_labels, predictions = [], []
     model.eval()
     with torch.no_grad():
         for batch_data in tqdm(dataloader):
+            true_labels += batch_data['labels']
             batch_data = to_device(args, batch_data)
             outputs = model(**batch_data)
-            token_logits = outputs[1]
-            mask_token_indexs = torch.where(batch_data["batch_inputs"]["input_ids"] == tokenizer.mask_token_id)[1]
-            for s_idx, mask_idx in enumerate(mask_token_indexs):
-                results.append(token_logits[s_idx, mask_idx, [neg_id, pos_id]].cpu().numpy())
-        true_labels = [
-            int(dataset[s_idx]['label']) for s_idx in range(len(dataset))
-        ]
-        predictions = np.asarray(results).argmax(axis=-1).tolist()
+            logits = outputs[1]
+            predictions += logits.argmax(dim=-1).cpu().numpy().tolist()
     return classification_report(true_labels, predictions, output_dict=True)
 
 def train(args, train_dataset, dev_dataset, model, tokenizer):
@@ -107,7 +101,7 @@ def train(args, train_dataset, dev_dataset, model, tokenizer):
     for epoch in range(args.num_train_epochs):
         print(f"Epoch {epoch+1}/{args.num_train_epochs}\n-------------------------------")
         total_loss = train_loop(args, train_dataloader, model, optimizer, lr_scheduler, epoch, total_loss)
-        metrics = test_loop(args, dev_dataloader, dev_dataset, model, tokenizer)
+        metrics = test_loop(args, dev_dataloader, model)
         macro_f1, micro_f1 = metrics['macro avg']['f1-score'], metrics['weighted avg']['f1-score']
         dev_f1_score = (macro_f1 + micro_f1) / 2
         logger.info(f'Dev: micro_F1 - {(100*micro_f1):0.4f} macro_f1 - {(100*macro_f1):0.4f}')
@@ -124,7 +118,7 @@ def test(args, test_dataset, model, tokenizer, save_weights:list):
     for save_weight in save_weights:
         logger.info(f'loading weights from {save_weight}...')
         model.load_state_dict(torch.load(os.path.join(args.output_dir, save_weight)))
-        metrics = test_loop(args, test_dataloader, test_dataset, model, tokenizer)
+        metrics = test_loop(args, test_dataloader, model)
         pos_p, pos_r, pos_f1 = metrics['1']['precision'], metrics['1']['recall'], metrics['1']['f1-score']
         neg_p, neg_r, neg_f1 = metrics['0']['precision'], metrics['0']['recall'], metrics['0']['f1-score']
         macro_f1, micro_f1 = metrics['macro avg']['f1-score'], metrics['weighted avg']['f1-score']
@@ -132,28 +126,31 @@ def test(args, test_dataset, model, tokenizer, save_weights:list):
         logger.info(f'Test: micro_F1 - {(100*micro_f1):0.4f} macro_f1 - {(100*macro_f1):0.4f}')
 
 def predict(args, comment:str, model, tokenizer):
+    prompt = PROMPT(comment)
     inputs = tokenizer(
-        PROMPT(comment), 
+        prompt, 
         max_length=args.max_length, 
         truncation=True, 
         return_tensors="pt"
     )
-    mask_token_index = torch.where(inputs["input_ids"] == tokenizer.mask_token_id)[1]
-    inputs = {
-        'batch_inputs': inputs
-    }
-    inputs = to_device(args, inputs)
+    encoding = tokenizer(prompt, truncation=True)
+    mask_idx = encoding.char_to_token(prompt.find('[MASK]'))
     pos_id = tokenizer.convert_tokens_to_ids(POS_TOKEN)
     neg_id = tokenizer.convert_tokens_to_ids(NEG_TOKEN)
-    
+    label_word_id = [neg_id, pos_id]
+    inputs = {
+        'batch_inputs': inputs, 
+        'batch_mask_idx': [mask_idx], 
+        'label_word_id': label_word_id
+    }
+    inputs = to_device(args, inputs)
     with torch.no_grad():
         outputs = model(**inputs)
-        token_logits = outputs[1]
-        pred = token_logits[0, mask_token_index, [neg_id, pos_id]].cpu().numpy()
-        probs = torch.nn.functional.softmax(torch.tensor(pred), dim=-1)
+        logits = outputs[1]
+        prob = torch.nn.functional.softmax(logits, dim=-1)[0]
     return {
-        "pred": '1' if probs[1] > probs[0] else '0', 
-        "prediction": {'0': probs[0].item(), '1': probs[1].item()}
+        "pred": logits.argmax(dim=-1)[0].item(), 
+        "prediction": {'neg': prob[0].item(), 'pos': prob[1].item()}
     }
 
 if __name__ == '__main__':
@@ -200,10 +197,10 @@ if __name__ == '__main__':
                 pred_res = predict(args, sample['comment'], model, tokenizer)
                 results.append({
                     "comment": sample['comment'], 
-                    "true_label": sample['label'], 
+                    "true_label": int(sample['label']), 
                     "pred_label": pred_res['pred'], 
                     "prediction": pred_res['prediction']
                 })
             with open(os.path.join(args.output_dir, save_weight + '_test_data_pred.json'), 'wt', encoding='utf-8') as f:
-                    for exapmle_result in results:
-                        f.write(json.dumps(exapmle_result, ensure_ascii=False) + '\n')
+                for exapmle_result in results:
+                    f.write(json.dumps(exapmle_result, ensure_ascii=False) + '\n')

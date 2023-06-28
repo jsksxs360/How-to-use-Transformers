@@ -57,17 +57,23 @@ class BertForPrompt(BertPreTrainedModel):
         super().__init__(config)
         self.bert = BertModel(config, add_pooling_layer=False)
         self.cls = BertOnlyMLMHead(config)
+        # Initialize weights and apply final processing
         self.post_init()
     
-    def forward(self, batch_inputs, batch_mask_idx, label_word_id, labels=None):
+    def get_output_embeddings(self):
+        return self.cls.predictions.decoder
+
+    def set_output_embeddings(self, new_embeddings):
+        self.cls.predictions.decoder = new_embeddings
+    
+    def forward(self, batch_inputs, batch_mask_idxs, label_word_id, labels=None):
         bert_output = self.bert(**batch_inputs)
         sequence_output = bert_output.last_hidden_state
-        batch_mask_reps = batched_index_select(sequence_output, 1, batch_mask_idx.unsqueeze(-1)).squeeze(1)
-        prediction_scores = self.cls(batch_mask_reps)
-        predictions = prediction_scores[:, label_word_id]
+        batch_mask_reps = batched_index_select(sequence_output, 1, batch_mask_idxs.unsqueeze(-1)).squeeze(1)
+        pred_scores = self.cls(batch_mask_reps)[:, label_word_id]
 
         loss = None
         if labels is not None:
-            loss_fct = CrossEntropyLoss()
-            loss = loss_fct(predictions, labels)
-        return loss, predictions
+            loss_fn = nn.CrossEntropyLoss()
+            loss = loss_fn(pred_scores, labels)
+        return loss, pred_scores

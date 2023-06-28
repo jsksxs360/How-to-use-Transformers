@@ -8,7 +8,7 @@ from transformers import AdamW, get_scheduler
 from sklearn.metrics import classification_report
 import sys
 sys.path.append('../../')
-from src.text_cls_prompt_senti_chnsenticorp.data import ChnSentiCorp, get_dataLoader, POS_TOKEN, NEG_TOKEN, PROMPT
+from src.text_cls_prompt_senti_chnsenticorp.data import ChnSentiCorp, get_dataLoader, get_prompt, get_verbalizer
 from src.text_cls_prompt_senti_chnsenticorp.modeling import BertForPrompt
 from src.text_cls_prompt_senti_chnsenticorp.arg import parse_args
 from src.tools import seed_everything
@@ -64,10 +64,10 @@ def test_loop(args, dataloader, model):
             predictions += logits.argmax(dim=-1).cpu().numpy().tolist()
     return classification_report(true_labels, predictions, output_dict=True)
 
-def train(args, train_dataset, dev_dataset, model, tokenizer):
+def train(args, train_dataset, dev_dataset, model, tokenizer, verbalizer):
     """ Train the model """
-    train_dataloader = get_dataLoader(args, train_dataset, tokenizer, shuffle=True)
-    dev_dataloader = get_dataLoader(args, dev_dataset, tokenizer, shuffle=False)
+    train_dataloader = get_dataLoader(args, train_dataset, tokenizer, verbalizer, shuffle=True)
+    dev_dataloader = get_dataLoader(args, dev_dataset, tokenizer, verbalizer, shuffle=False)
     t_total = len(train_dataloader) * args.num_train_epochs
     # Prepare optimizer and schedule (linear warmup and decay)
     no_decay = ["bias", "LayerNorm.weight"]
@@ -99,7 +99,7 @@ def train(args, train_dataset, dev_dataset, model, tokenizer):
     total_loss = 0.
     best_f1_score = 0.
     for epoch in range(args.num_train_epochs):
-        print(f"Epoch {epoch+1}/{args.num_train_epochs}\n-------------------------------")
+        print(f"Epoch {epoch+1}/{args.num_train_epochs}\n" + 30 * "-")
         total_loss = train_loop(args, train_dataloader, model, optimizer, lr_scheduler, epoch, total_loss)
         metrics = test_loop(args, dev_dataloader, model)
         macro_f1, micro_f1 = metrics['macro avg']['f1-score'], metrics['weighted avg']['f1-score']
@@ -112,8 +112,8 @@ def train(args, train_dataset, dev_dataset, model, tokenizer):
             torch.save(model.state_dict(), os.path.join(args.output_dir, save_weight))
     logger.info("Done!")
 
-def test(args, test_dataset, model, tokenizer, save_weights:list):
-    test_dataloader = get_dataLoader(args, test_dataset, tokenizer, shuffle=False)
+def test(args, test_dataset, model, tokenizer, verbalizer, save_weights:list):
+    test_dataloader = get_dataLoader(args, test_dataset, tokenizer, verbalizer, shuffle=False)
     logger.info('***** Running testing *****')
     for save_weight in save_weights:
         logger.info(f'loading weights from {save_weight}...')
@@ -125,32 +125,35 @@ def test(args, test_dataset, model, tokenizer, save_weights:list):
         logger.info(f'POS: {100*pos_p:>0.2f} / {100*pos_r:>0.2f} / {100*pos_f1:>0.2f}, NEG: {100*neg_p:>0.2f} / {100*neg_r:>0.2f} / {100*neg_f1:>0.2f}')
         logger.info(f'Test: micro_F1 - {(100*micro_f1):0.4f} macro_f1 - {(100*macro_f1):0.4f}')
 
-def predict(args, comment:str, model, tokenizer):
-    prompt = PROMPT(comment)
+def predict(args, comment:str, model, tokenizer, verbalizer):
+    prompt_data = get_prompt(comment)
+    prompt = prompt_data['prompt']
+    encoding = tokenizer(prompt, truncation=True)
+    mask_idx = encoding.char_to_token(prompt_data['mask_offset'])
+    assert mask_idx is not None
     inputs = tokenizer(
         prompt, 
         max_length=args.max_length, 
+        padding=True, 
         truncation=True, 
         return_tensors="pt"
     )
-    encoding = tokenizer(prompt, truncation=True)
-    mask_idx = encoding.char_to_token(prompt.find('[MASK]'))
-    pos_id = tokenizer.convert_tokens_to_ids(POS_TOKEN)
-    neg_id = tokenizer.convert_tokens_to_ids(NEG_TOKEN)
-    label_word_id = [neg_id, pos_id]
     inputs = {
         'batch_inputs': inputs, 
-        'batch_mask_idx': [mask_idx], 
-        'label_word_id': label_word_id
+        'batch_mask_idxs': [mask_idx], 
+        'label_word_id': [verbalizer['neg']['id'], verbalizer['pos']['id']] 
     }
     inputs = to_device(args, inputs)
+    model.eval()
     with torch.no_grad():
         outputs = model(**inputs)
         logits = outputs[1]
-        prob = torch.nn.functional.softmax(logits, dim=-1)[0]
+        prob = torch.nn.functional.softmax(logits, dim=-1)
+    pred = logits.argmax(dim=-1)[0].item()
+    prob = prob[0][pred].item()
     return {
-        "pred": logits.argmax(dim=-1)[0].item(), 
-        "prediction": {'neg': prob[0].item(), 'pos': prob[1].item()}
+        "pred": pred, 
+        "prob": prob
     }
 
 if __name__ == '__main__':
@@ -172,16 +175,35 @@ if __name__ == '__main__':
         args.model_checkpoint,
         config=config
     ).to(args.device)
+    if args.vtype == 'virtual': # virtual label words
+        sp_tokens = ['[POS]', '[NEG]']
+        logger.info(f'adding special tokens {sp_tokens} to tokenizer...')
+        tokenizer.add_special_tokens({'additional_special_tokens': sp_tokens})
+        model.resize_token_embeddings(len(tokenizer))
+        verbalizer = get_verbalizer(tokenizer, vtype=args.vtype)
+        logger.info(f"initializing embeddings of {verbalizer['pos']['token']} and {verbalizer['neg']['token']}...")
+        with torch.no_grad():
+            pos_id, neg_id = verbalizer['pos']['id'], verbalizer['neg']['id']
+            pos_tokenized = tokenizer(verbalizer['pos']['description'])
+            pos_tokenized_ids = tokenizer.convert_tokens_to_ids(pos_tokenized)
+            neg_tokenized = tokenizer(verbalizer['neg']['description'])
+            neg_tokenized_ids = tokenizer.convert_tokens_to_ids(neg_tokenized)
+            new_embedding = model.bert.embeddings.word_embeddings.weight[pos_tokenized_ids].mean(axis=0)
+            model.bert.embeddings.word_embeddings.weight[pos_id, :] = new_embedding.clone().detach().requires_grad_(True)
+            new_embedding = model.bert.embeddings.word_embeddings.weight[neg_tokenized_ids].mean(axis=0)
+            model.bert.embeddings.word_embeddings.weight[neg_id, :] = new_embedding.clone().detach().requires_grad_(True)
+    else: # base label words
+        verbalizer = get_verbalizer(tokenizer, vtype=args.vtype)
     # Training
     if args.do_train:
         train_dataset = ChnSentiCorp(args.train_file)
         dev_dataset = ChnSentiCorp(args.dev_file)
-        train(args, train_dataset, dev_dataset, model, tokenizer)
+        train(args, train_dataset, dev_dataset, model, tokenizer, verbalizer)
     # Testing
     save_weights = [file for file in os.listdir(args.output_dir) if file.endswith('.bin')]
     if args.do_test:
         test_dataset = ChnSentiCorp(args.test_file)
-        test(args, test_dataset, model, tokenizer, save_weights)
+        test(args, test_dataset, model, tokenizer, verbalizer, save_weights)
     # Predicting
     if args.do_predict:
         test_dataset = ChnSentiCorp(args.test_file)
@@ -191,15 +213,14 @@ if __name__ == '__main__':
             logger.info(f'predicting labels of {save_weight}...')
             
             results = []
-            model.eval()
             for s_idx in tqdm(range(len(test_dataset))):
                 sample = test_dataset[s_idx]
-                pred_res = predict(args, sample['comment'], model, tokenizer)
+                pred_res = predict(args, sample['comment'], model, tokenizer, verbalizer)
                 results.append({
                     "comment": sample['comment'], 
-                    "true_label": int(sample['label']), 
-                    "pred_label": pred_res['pred'], 
-                    "prediction": pred_res['prediction']
+                    "label": int(sample['label']), 
+                    "pred": pred_res['pred'], 
+                    "prob": pred_res['prob']
                 })
             with open(os.path.join(args.output_dir, save_weight + '_test_data_pred.json'), 'wt', encoding='utf-8') as f:
                 for exapmle_result in results:

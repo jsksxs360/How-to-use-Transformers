@@ -19,6 +19,9 @@ def parse_args():
         help="Path to pretrained model or model identifier from huggingface.co/models",
     )
     parser.add_argument("--max_length", default=512, type=int, required=True)
+    parser.add_argument("--vtype", default="base", type=str, required=True, 
+        help="verbalizer type", choices=["base", "virtual"]
+    )
     
     parser.add_argument("--do_train", action="store_true", help="Whether to run training.")
     parser.add_argument("--do_test", action="store_true", help="Whether to run eval on the test set.")

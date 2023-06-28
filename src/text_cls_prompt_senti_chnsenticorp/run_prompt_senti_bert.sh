@@ -1,9 +1,10 @@
-export OUTPUT_DIR=./prompt_senti_bert_results/
+export OUTPUT_DIR=./prompt_senti_bert_vbase_results/
 
 python3 run_prompt_senti_bert.py \
     --output_dir=$OUTPUT_DIR \
     --model_type=bert \
     --model_checkpoint=bert-base-chinese \
+    --vtype=base \
     --train_file=../../data/ChnSentiCorp/train.txt \
     --dev_file=../../data/ChnSentiCorp/dev.txt \
     --test_file=../../data/ChnSentiCorp/test.txt \

@@ -49,11 +49,11 @@
 }
 
 .page-inner {
-    max-width: {{ site.page_width | default: '800px' }};
+    max-width: {{ site.page_width | default: '1000px' }};
 }
 
 .back-to-top {
-    right: calc((100% - 300px - min(100% - 300px, {{ site.page_width | default: '800px' }})) / 2 + 25px);
+    right: calc((100% - 300px - min(100% - 300px, {{ site.page_width | default: '1000px' }})) / 2 + 25px);
 }
 
 /* scrollbar */

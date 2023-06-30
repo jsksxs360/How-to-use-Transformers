@@ -54,7 +54,7 @@ collections:
     output: true
     permalink: /:collection/:path/
 
-page_width: 800px
+page_width: 1000px
 
 destination:      ./_site
 incremental:      false

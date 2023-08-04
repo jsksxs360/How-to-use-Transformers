@@ -7,6 +7,8 @@
 - *data*：存储使用到的数据集；
 - *src*：存储所有的任务 Demo，每个任务一个文件夹，可以下载下来单独使用。
 
+> 该教程暂未包含 [LLaMa](https://github.com/facebookresearch/llama) 等大规模语言模型 (LLM) 的使用方法。我最近也正在系统地学习，之后会把 LLM 内容添加进来，敬请期待。
+
 ## Transformers 库快速入门
 
 - **第一部分：背景知识**

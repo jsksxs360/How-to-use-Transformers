@@ -215,7 +215,7 @@ class AttentionHead(nn.Module):
 
 每个头都会初始化三个独立的线性层，负责将 $\boldsymbol{Q},\boldsymbol{K},\boldsymbol{V}$ 序列映射到尺寸为  `[batch_size, seq_len, head_dim]` 的张量，其中 `head_dim` 是映射到的向量维度。
 
-> 实践中一般将 `head_dim` 设置为 `embed_dim` 的倍数，这样 token 嵌入式表示的维度就可以保持不变，例如 BERT 有 12 个注意力头，因此每个头的维度被设置为 $768 / 12 = 64$。
+> 实践中一般将 `head_dim` 设置为 `embed_dim` 的因数，这样 token 嵌入式表示的维度就可以保持不变，例如 BERT 有 12 个注意力头，因此每个头的维度被设置为 $768 / 12 = 64$。
 {: .block-warning }
 
 最后只需要拼接多个注意力头的输出就可以构建出 Multi-head Attention 层了（这里在拼接后还通过一个线性变换来生成最终的输出张量）：

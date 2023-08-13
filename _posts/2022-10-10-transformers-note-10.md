@@ -10,7 +10,7 @@ layout: post
 
 例如要判断标题“American Duo Wins Opening Beach Volleyball Match”的新闻类别，就可以应用模板“This is a $\texttt{[MASK]}$ News: $\{x\}$”将其转换为“This is a $\texttt{[MASK]}$ News: American Duo Wins Opening Beach Volleyball Match”，然后送入到包含 MLM (Mask Language Modeling) 预训练任务的模型中预测 $\texttt{[MASK]}$ 对应的词，最后将词映射到新闻类别（比如“Sports”对应“体育”类）。
 
-> 如果你对 Prompting 概念不是很清楚，强烈建议先阅读一下[《Prompt 方法简介》](https://xiaosheng.run/2022/09/10/what-is-prompt.html)。
+> 如果你对 Prompting 概念不是很清楚，强烈建议先阅读一下[《Prompt 方法简介》](https://xiaosheng.blog/2022/09/10/what-is-prompt.html)。
 
 下面我们以情感分析任务为例，运用 Transformers 库手工构建一个基于 Prompt 的模型来完成任务。
 

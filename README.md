@@ -30,6 +30,12 @@
   - 第十二章：[抽取式问答](https://transformers.run/nlp/2022-04-02-transformers-note-9.html)
   - 第十三章：[Prompt 情感分析](https://transformers.run/nlp/2022-10-10-transformers-note-10.html)
 
+- **第四部分：大模型时代**
+  - 第十四章：微调 FlanT5 11b
+  - 第十五章：指令微调 FlanT5 11b
+  - 第十六章：微调 Llama2 7b
+  - 第十七章：指令微调 Llama2 7b
+
 ## Demo 一览
 
 - [pairwise_cls_similarity_afqmc](https://github.com/jsksxs360/How-to-use-Transformers/tree/main/src/pairwise_cls_similarity_afqmc)：句子对分类任务，[金融同义句判断](https://transformers.run/intro/2021-12-17-transformers-note-4/)。

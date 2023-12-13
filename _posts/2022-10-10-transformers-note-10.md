@@ -1141,3 +1141,6 @@ bash run_prompt_senti_bert.sh
 > micro_F1 - 95.4166 macro_f1 - 95.4167
 > ```
 
+## 参考
+
+[[1]](https://github.com/huggingface/transformers/issues/9960) Github 关于 resize MLMHead 的讨论

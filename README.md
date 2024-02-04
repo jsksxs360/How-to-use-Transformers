@@ -31,10 +31,9 @@
   - 第十三章：[Prompt 情感分析](https://transformers.run/nlp/2022-10-10-transformers-note-10.html)
 
 - **第四部分：大模型时代**
-  - 第十四章：微调 FlanT5 11b
-  - 第十五章：指令微调 FlanT5 11b
-  - 第十六章：微调 Llama2 7b
-  - 第十七章：指令微调 Llama2 7b
+  - 第十四章：大模型简介
+  - 第十五章：指令微调 FlanT5-XXL
+  - 第十六章：指令微调 Llama2-7b
 
 ## Demo 一览
 

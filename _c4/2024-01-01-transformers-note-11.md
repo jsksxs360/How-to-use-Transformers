@@ -18,13 +18,13 @@ layout: post
 
 <img src="/assets/img/transformers-note-11/utilization_ICL_vs_CoT.png" alt="utilization_ICL_vs_CoT" style="display: block; margin: auto; width: 800px">
 
+
+
 ### In-Context Learning
 
 ICL的形式如上图，由三个部分组成：任务描述，若干个问答的示例（demonstration）和一个query
 
 ICL与前文提及的指令微调，都采用了自然语言的形式来描述任务和实例，区别在于后者是为了适配模型，前者仅在使用阶段提示LLM
-
-
 
 ICL的性能很大程度上依赖于示例，所以设计合适的示例至关重要，这包含以下三个方面：
 - 示例选择：通常采用简单且低开销的启发式方法，比如基于k-NN检索与query语义相关的示例、选择最具代表性的示例集合
@@ -33,11 +33,13 @@ ICL的性能很大程度上依赖于示例，所以设计合适的示例至关�
 
 - 示例顺序：LLM会倾向于重复示范结尾的答案 。早期工作提出了一些启发式方法来快速地找到一个良好的顺序
 
-  
 
 关于LLM如何实现ICL：
 - 一种观点认为，LLM主要是从示例中识别出目标任务而非从中学习。也就是说，LLM从示例中识别出目标任务后，利用预训练中获得的先验知识来解决新任务。相关研究认为，在预训练数据中存在一个代表任务的潜在变量，LLM能够从示例中捕获这个变量，使它们能够在ICL中识别任务。
+
 - 另一种观点认为，LLM仅仅通过示例来学习在预训练阶段没有见过的新任务。因为任务识别的能力在小型LM中也能体现，而只有LLM才能涌现任务学习的能力。同时一些研究表明，小型LM倾向于忽略标签，主要依靠其先验知识来完成任务，而LLM有能力超越其先验知识，并从示例中获取新知识，从而获得更好的结果。
+
+  
 
 
 ### Chain-of-Thought Prompting
@@ -60,6 +62,8 @@ ICL和CoT都是在各种任务上比较通用的方法，缺陷在于难以解�
 整体框架如下图，由LLM理解目标任务后生成计划（既可以是自然语言的行动序列，也可以是编程语言的可执行程序），Executor（LLM或机器人）在环境中执行计划，环境把关于行动结果的反馈（自然语言或其他模态的信号）返回LLM，从而让LLM改善计划，不断重复此过程以得到更好的结果。
 
 <img src="/assets/img/transformers-note-11/utilization_planning_framework.png" alt="utilization_planning_framework" style="display: block; margin: auto; width: 800px">
+
+
 
 ### Prompt设计指南
 Prompting是使用LLM的主要方法，而prompts的质量在很大程度上影响LLM在特定任务的性能，接下来让我们看看如何设计合适的Prompts

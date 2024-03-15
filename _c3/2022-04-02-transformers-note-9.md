@@ -157,7 +157,7 @@ tokenizer = AutoTokenizer.from_pretrained(checkpoint)
 
 标签是答案在上下文中起始/结束 token 的索引，模型的任务就是预测每个 token 为答案片段的起始/结束的概率，即为每个 token 预测一个起始 logit 值和结束 logit 值。例如对于下面的文本，理想标签为：
 
-![qa_labels](/img/article/transformers-note-9/qa_labels.svg)
+![qa_labels](/assets/img/transformers-note-9/qa_labels.svg)
 
 我们在[问答 pipeline](/2022/03/08/transformers-note-5.html#处理长文本) 中就讨论过，由于问题与上下文拼接后的 token 序列可能超过模型的最大输入长度，因此我们可以将上下文切分为短文本块 (chunk) 来处理，同时为了避免答案被截断，我们使用滑窗使得切分出的文本块之间有重叠。
 

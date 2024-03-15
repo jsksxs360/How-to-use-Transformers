@@ -47,10 +47,13 @@ exclude:
   - _drafts
 
 collections:
-  back:
+  c1:
     output: true
     permalink: /:collection/:path/
-  intro:
+  c2:
+    output: true
+    permalink: /:collection/:path/
+  c3:
     output: true
     permalink: /:collection/:path/
 

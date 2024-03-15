@@ -16,7 +16,7 @@ layout: post
 
 ## 大模型的使用
 
-![utilization_ICL_vs_CoT](2024-01-01-transformers-note-11.assets/utilization_ICL_vs_CoT.png)
+<img src="/assets/img/transformers-note-11/utilization_ICL_vs_CoT.png" alt="utilization_ICL_vs_CoT" style="display: block; margin: auto; width: 800px">
 
 ### In-Context Learning
 
@@ -59,8 +59,7 @@ ICL和CoT都是在各种任务上比较通用的方法，缺陷在于难以解�
 
 整体框架如下图，由LLM理解目标任务后生成计划（既可以是自然语言的行动序列，也可以是编程语言的可执行程序），Executor（LLM或机器人）在环境中执行计划，环境把关于行动结果的反馈（自然语言或其他模态的信号）返回LLM，从而让LLM改善计划，不断重复此过程以得到更好的结果。
 
-![utilization_planning_framework](2024-01-01-transformers-note-11.assets/utilization_planning_framework.png)
-
+<img src="/assets/img/transformers-note-11/utilization_planning_framework.png" alt="utilization_planning_framework" style="display: block; margin: auto; width: 800px">
 
 ### Prompt设计指南
 Prompting是使用LLM的主要方法，而prompts的质量在很大程度上影响LLM在特定任务的性能，接下来让我们看看如何设计合适的Prompts

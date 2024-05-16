@@ -153,7 +153,7 @@ print(tokens)
 ```
 
 ```
-['Using', 'a', 'Trans', '##former', 'network', 'is', 'simple']
+['using', 'a', 'transform', '##er', 'network', 'is', 'simple']
 ```
 
 可以看到，BERT 分词器采用的是子词切分策略，它会不断切分词语直到获得词表中的 token，例如 “transformer” 会被切分为 “transform” 和 “##er”。

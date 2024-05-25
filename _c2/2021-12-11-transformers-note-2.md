@@ -153,10 +153,11 @@ print(tokens)
 ```
 
 ```
-['using', 'a', 'transform', '##er', 'network', 'is', 'simple']
+['Using', 'a', 'Trans', '##former', 'network', 'is', 'simple']
 ```
 
-可以看到，BERT 分词器采用的是子词切分策略，它会不断切分词语直到获得词表中的 token，例如 “transformer” 会被切分为 “transform” 和 “##er”。
+可以看到，BERT 分词器采用的是子词切分策略，它会不断切分词语直到获得词表中的 token，例如 “Transformer” 会被切分为 “Trans” 和 “##former”。
+（旧版本有少许差别： [revision ae1d3b](https://huggingface.co/google-bert/bert-base-cased/commit/ae1d3b2cce5ef798cab884c0e7e61e34f46bc412) 之前的结果是：`['using', 'a', 'transform', '##er', 'network', 'is', 'simple']`）
 
 然后，我们通过 `convert_tokens_to_ids()` 将切分出的 tokens 转换为对应的 token IDs：
 

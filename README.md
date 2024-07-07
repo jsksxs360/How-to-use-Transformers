@@ -1,13 +1,13 @@
 ![title](title.jpg)
 
-[Transformers](https://huggingface.co/docs/transformers/index) 是由 [Hugging Face](https://huggingface.co/) 开发的一个 NLP 包，支持加载目前绝大部分的预训练模型。随着 BERT、GPT 等大规模语言模型的兴起，越来越多的公司和研究者采用 Transformers 库来构建 NLP 应用。
+[Transformers](https://huggingface.co/docs/transformers/index) 是由 [Hugging Face](https://huggingface.co/) 公司开发的一个 Python 库，支持加载目前绝大部分的预训练语言模型。随着 BERT、GPT 等模型的兴起，越来越多的用户采用 Transformers 库来构建自然语言处理应用。
 
-该项目为[《Transformers 库快速入门》](https://transformers.run/)系列教程的代码仓库，按照以下方式组织代码：
+该项目为[《Transformers 库快速入门》](https://transformers.run/)教程的代码仓库，按照以下方式组织代码：
 
 - *data*：存储使用到的数据集；
-- *src*：存储所有的任务 Demo，每个任务一个文件夹，可以下载下来单独使用。
+- *src*：存储示例代码，每个任务对应一个文件夹，可以下载下来单独使用。
 
-> 该教程暂未包含 [LLaMa](https://github.com/facebookresearch/llama) 等大规模语言模型 (LLM) 的使用方法。我最近也正在系统地学习，之后会把 LLM 内容添加进来，敬请期待。
+> 该教程正在更新中，暂时还未添加大语言模型的相关内容。
 
 ## Transformers 库快速入门
 
@@ -31,11 +31,11 @@
   - 第十三章：[Prompt 情感分析](https://transformers.run/c3/2022-10-10-transformers-note-10/)
 
 - **第四部分：大模型时代**
-  - 第十四章：大模型简介
-  - 第十五章：指令微调 FlanT5-XXL
-  - 第十六章：指令微调 Llama2-7b
+  - 第十四章：使用大语言模型
+  - 第十五章：指令微调 FlanT5 模型
+  - 第十六章：指令微调 Llama2 模型
 
-## Demo 一览
+## 示例代码
 
 - [pairwise_cls_similarity_afqmc](https://github.com/jsksxs360/How-to-use-Transformers/tree/main/src/pairwise_cls_similarity_afqmc)：句子对分类任务，[金融同义句判断](https://transformers.run/c2/2021-12-17-transformers-note-4/)。
 - [sequence_labeling_ner_cpd](https://github.com/jsksxs360/How-to-use-Transformers/tree/main/src/sequence_labeling_ner_cpd)：序列标注任务，[命名实体识别](https://transformers.run/c3/2022-03-18-transformers-note-6/)。
@@ -43,3 +43,10 @@
 - [seq2seq_summarization](https://github.com/jsksxs360/How-to-use-Transformers/tree/main/src/seq2seq_summarization)：seq2seq任务，[文本摘要](https://transformers.run/c3/2022-03-29-transformers-note-8/)。
 - [sequence_labeling_extractiveQA_cmrc](https://github.com/jsksxs360/How-to-use-Transformers/tree/main/src/sequence_labeling_extractiveQA_cmrc)：序列标注任务，[抽取式问答](https://transformers.run/c3/2022-04-02-transformers-note-9/)。
 - [text_cls_prompt_senti_chnsenticorp](https://github.com/jsksxs360/How-to-use-Transformers/tree/main/src/text_cls_prompt_senti_chnsenticorp)：文本分类任务，[Prompt 情感分析](https://transformers.run/c3/2022-10-10-transformers-note-10/)。
+
+## 重要更新
+
+| 日期       | 内容                                                         |
+| ---------- | ------------------------------------------------------------ |
+| 2024-07-06 | 优化了第一章《自然语言处理》的文字表述，增加了一些图片，增加了大语言模型的简介。 |
+

@@ -56,6 +56,9 @@ collections:
   c3:
     output: true
     permalink: /:collection/:path/
+  c4:
+    output: true
+    permalink: /:collection/:path/
 
 page_width: 900px
 

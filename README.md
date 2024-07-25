@@ -30,10 +30,12 @@
   - 第十二章：[抽取式问答](https://transformers.run/c3/2022-04-02-transformers-note-9/)
   - 第十三章：[Prompt 情感分析](https://transformers.run/c3/2022-10-10-transformers-note-10/)
 
-- **第四部分：大模型时代**
-  - 第十四章：使用大语言模型
-  - 第十五章：指令微调 FlanT5 模型
-  - 第十六章：指令微调 Llama2 模型
+- **第四部分：大语言模型时代**
+  - 第十四章：[大语言模型技术简介](https://transformers.run/c4/intro_to_llms/)
+  - 第十五章：预训练大语言模型
+  - 第十六章：微调大语言模型
+  - 第十七章：指令微调 FlanT5 模型
+  - 第十八章：指令微调 Llama2 模型
 
 ## 示例代码
 

@@ -32,7 +32,7 @@
 
 - **第四部分：大语言模型时代**
   - 第十四章：[大语言模型技术简介](https://transformers.run/c4/intro_to_llms/)
-  - 第十五章：预训练大语言模型
+  - 第十五章：[预训练大语言模型](https://transformers.run/c4/pretrain_llms/)
   - 第十六章：微调大语言模型
   - 第十七章：指令微调 FlanT5 模型
   - 第十八章：指令微调 Llama2 模型

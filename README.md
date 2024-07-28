@@ -28,12 +28,12 @@
   - 第十章：[翻译任务](https://transformers.run/c3/2022-03-24-transformers-note-7/)
   - 第十一章：[文本摘要任务](https://transformers.run/c3/2022-03-29-transformers-note-8/)
   - 第十二章：[抽取式问答](https://transformers.run/c3/2022-04-02-transformers-note-9/)
-  - 第十三章：[Prompt 情感分析](https://transformers.run/c3/2022-10-10-transformers-note-10/)
+  - 第十三章：[Prompting 情感分析](https://transformers.run/c3/2022-10-10-transformers-note-10/)
 
 - **第四部分：大语言模型时代**
-  - 第十四章：[大语言模型技术简介](https://transformers.run/c4/intro_to_llms/)
-  - 第十五章：[预训练大语言模型](https://transformers.run/c4/pretrain_llms/)
-  - 第十六章：微调大语言模型
+  - 第十四章：[大语言模型技术简介](https://transformers.run/c4/c14_intro_to_llms/)
+  - 第十五章：[预训练大语言模型](https://transformers.run/c4/c15_pretrain_llms/)
+  - 第十六章：[使用大语言模型](https://transformers.run/c4/c16_finetune_llms)
   - 第十七章：指令微调 FlanT5 模型
   - 第十八章：指令微调 Llama2 模型
 
@@ -51,4 +51,5 @@
 | 日期       | 内容                                                         |
 | ---------- | ------------------------------------------------------------ |
 | 2024-07-06 | 优化了第一章《自然语言处理》的文字表述，增加了一些图片，增加了大语言模型的简介。 |
+| 2024-07-27 | 完成大语言模型技术简介（第14至16章）初稿 |
 

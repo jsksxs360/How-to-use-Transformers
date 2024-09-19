@@ -7,8 +7,7 @@ python3 run_translation_marian.py \
     --train_file=../../data/translation2019zh/translation2019zh_train.json \
     --dev_file=../../data/translation2019zh/translation2019zh_train.json \
     --test_file=../../data/translation2019zh/translation2019zh_valid.json \
-    --max_input_length=128 \
-    --max_target_length=128 \
+    --max_length=128 \
     --learning_rate=1e-5 \
     --num_train_epochs=3 \
     --batch_size=32 \

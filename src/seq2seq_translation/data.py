@@ -35,24 +35,16 @@ def get_dataLoader(args, dataset, model, tokenizer, batch_size=None, shuffle=Fal
             batch_targets.append(sample['english'])
         batch_data = tokenizer(
             batch_inputs, 
+            text_target=batch_targets, 
             padding=True, 
-            max_length=args.max_input_length,
+            max_length=args.max_length,
             truncation=True, 
             return_tensors="pt"
         )
-        with tokenizer.as_target_tokenizer():
-            labels = tokenizer(
-                batch_targets, 
-                padding=True, 
-                max_length=args.max_target_length,
-                truncation=True, 
-                return_tensors="pt"
-            )["input_ids"]
-            batch_data['decoder_input_ids'] = model.prepare_decoder_input_ids_from_labels(labels)
-            end_token_index = torch.where(labels == tokenizer.eos_token_id)[1]
-            for idx, end_idx in enumerate(end_token_index):
-                labels[idx][end_idx+1:] = -100
-            batch_data['labels'] = labels
+        batch_data['decoder_input_ids'] = model.prepare_decoder_input_ids_from_labels(batch_data['labels'])
+        end_token_index = torch.where(batch_data['labels'] == tokenizer.eos_token_id)[1]
+        for idx, end_idx in enumerate(end_token_index):
+            batch_data['labels'][idx][end_idx+1:] = -100
         return batch_data
     
     return DataLoader(dataset, batch_size=(batch_size if batch_size else args.batch_size), shuffle=shuffle, 

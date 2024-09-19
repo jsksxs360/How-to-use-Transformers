@@ -51,7 +51,7 @@ def test_loop(args, dataloader, model, tokenizer):
             generated_tokens = model.generate(
                 batch_data["input_ids"],
                 attention_mask=batch_data["attention_mask"],
-                max_length=args.max_target_length,
+                max_length=args.max_length,
             ).cpu().numpy()
             label_tokens = batch_data["labels"].cpu().numpy()
 
@@ -121,7 +121,7 @@ def test(args, test_dataset, model, tokenizer, save_weights:list):
 def predict(args, sentence:str, model, tokenizer):
     inputs = tokenizer(
         sentence, 
-        max_length=args.max_input_length, 
+        max_length=args.max_length, 
         truncation=True, 
         return_tensors="pt"
     )
@@ -130,7 +130,7 @@ def predict(args, sentence:str, model, tokenizer):
         generated_tokens = model.generate(
             inputs["input_ids"],
             attention_mask=inputs["attention_mask"],
-            max_length=args.max_target_length,
+            max_length=args.max_length,
         ).cpu().numpy()
     decoded_preds = tokenizer.decode(generated_tokens[0], skip_special_tokens=True)
     return decoded_preds

@@ -18,8 +18,7 @@ def parse_args():
         default="bert-large-cased/", type=str, required=True,
         help="Path to pretrained model or model identifier from huggingface.co/models",
     )
-    parser.add_argument("--max_input_length", default=256, type=int, required=True)
-    parser.add_argument("--max_target_length", default=256, type=int, required=True)
+    parser.add_argument("--max_length", default=256, type=int, required=True)
     
     parser.add_argument("--do_train", action="store_true", help="Whether to run training.")
     parser.add_argument("--do_test", action="store_true", help="Whether to run eval on the test set.")

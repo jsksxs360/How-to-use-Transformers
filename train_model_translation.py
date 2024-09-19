@@ -26,8 +26,7 @@ max_dataset_size = 220000
 train_set_size = 200000
 valid_set_size = 20000
 
-max_input_length = 128
-max_target_length = 128
+max_length = 128
 
 batch_size = 32
 learning_rate = 1e-5
@@ -69,24 +68,16 @@ def collote_fn(batch_samples):
         batch_targets.append(sample['english'])
     batch_data = tokenizer(
         batch_inputs, 
+        text_target=batch_targets, 
         padding=True, 
-        max_length=max_input_length,
+        max_length=max_length,
         truncation=True, 
         return_tensors="pt"
     )
-    with tokenizer.as_target_tokenizer():
-        labels = tokenizer(
-            batch_targets, 
-            padding=True, 
-            max_length=max_target_length,
-            truncation=True, 
-            return_tensors="pt"
-        )["input_ids"]
-        batch_data['decoder_input_ids'] = model.prepare_decoder_input_ids_from_labels(labels)
-        end_token_index = torch.where(labels == tokenizer.eos_token_id)[1]
-        for idx, end_idx in enumerate(end_token_index):
-            labels[idx][end_idx+1:] = -100
-        batch_data['labels'] = labels
+    batch_data['decoder_input_ids'] = model.prepare_decoder_input_ids_from_labels(batch_data['labels'])
+    end_token_index = torch.where(batch_data['labels'] == tokenizer.eos_token_id)[1]
+    for idx, end_idx in enumerate(end_token_index):
+        batch_data['labels'][idx][end_idx+1:] = -100
     return batch_data
 
 train_dataloader = DataLoader(train_data, batch_size=batch_size, shuffle=True, collate_fn=collote_fn)
@@ -126,7 +117,7 @@ def test_loop(dataloader, model):
             generated_tokens = model.generate(
                 batch_data["input_ids"],
                 attention_mask=batch_data["attention_mask"],
-                max_length=max_target_length,
+                max_length=max_length,
             ).cpu().numpy()
         label_tokens = batch_data["labels"].cpu().numpy()
         
@@ -136,9 +127,7 @@ def test_loop(dataloader, model):
 
         preds += [pred.strip() for pred in decoded_preds]
         labels += [[label.strip()] for label in decoded_labels]
-    bleu_score = bleu.corpus_score(preds, labels).score
-    print(f"BLEU: {bleu_score:>0.2f}\n")
-    return bleu_score
+    return bleu.corpus_score(preds, labels).score
 
 optimizer = AdamW(model.parameters(), lr=learning_rate)
 lr_scheduler = get_scheduler(
@@ -154,6 +143,7 @@ for t in range(epoch_num):
     print(f"Epoch {t+1}/{epoch_num}\n-------------------------------")
     total_loss = train_loop(train_dataloader, model, optimizer, lr_scheduler, t+1, total_loss)
     valid_bleu = test_loop(valid_dataloader, model)
+    print(f"BLEU: {valid_bleu:>0.2f}\n")
     if valid_bleu > best_bleu:
         best_bleu = valid_bleu
         print('saving new weights...\n')
@@ -176,7 +166,7 @@ print("Done!")
 #         generated_tokens = model.generate(
 #             batch_data["input_ids"],
 #             attention_mask=batch_data["attention_mask"],
-#             max_length=max_target_length,
+#             max_length=max_length,
 #         ).cpu().numpy()
 #         label_tokens = batch_data["labels"].cpu().numpy()
 

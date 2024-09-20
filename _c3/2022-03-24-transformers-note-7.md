@@ -95,20 +95,19 @@ model_checkpoint = "Helsinki-NLP/opus-mt-zh-en"
 tokenizer = AutoTokenizer.from_pretrained(model_checkpoint)
 ```
 
-你也可以尝试别的语言，[Helsinki-NLP](https://huggingface.co/Helsinki-NLP) 提供了超过了一千种模型用于在不同语言之间进行翻译，只需要将 `model_checkpoint` 设置为对应的语言即可。如果你想使用多语言模型的分词器，例如 mBART、mBART-50、M2M100，就需要通过设置 `tokenizer.src_lang` 和 `tokenizer.tgt_lang` 来手工设定源/目标语言。
+你也可以尝试别的语言，[Helsinki-NLP](https://huggingface.co/Helsinki-NLP) 提供了超过了一千种模型用于在不同语言之间进行翻译，只需要将 `model_checkpoint` 设置为对应的语言即可。如果你正在使用多语言模型的分词器，例如 mBART、mBART-50、M2M100，就需要通过设置 `tokenizer.src_lang` 和 `tokenizer.tgt_lang` 来手工设定源/目标语言。
 
-默认情况下分词器会采用源语言的设定来编码文本，要编码目标语言则需要通过上下文管理器 `as_target_tokenizer()`：
+默认情况下分词器会采用源语言的设定来编码文本（对于英翻译模型 opus-mt-zh-en 而言就是中文），要编码目标语言则需要使用  `text_targets` 参数：
 
 ```python
 zh_sentence = train_data[0]["chinese"]
 en_sentence = train_data[0]["english"]
 
 inputs = tokenizer(zh_sentence)
-with tokenizer.as_target_tokenizer():
-    targets = tokenizer(en_sentence)
+targets = tokenizer(text_target=en_sentence)
 ```
 
-如果你忘记添加上下文管理器，就会使用源语言分词器对目标语言进行编码，产生糟糕的分词结果：
+如果你忘记使用 `text_targets` 参数，就会使用源语言分词器对目标语言进行编码，产生糟糕的分词结果：
 
 ```python
 wrong_targets = tokenizer(en_sentence)
@@ -125,9 +124,9 @@ print(tokenizer.convert_ids_to_tokens(wrong_targets["input_ids"]))
 ['▁We', "'", 're', '▁going', '▁to', '▁', 'or', 'der', '▁some', '▁ch', 'ick', 's', '▁for', '▁the', '▁k', 'id', 's', '▁and', '▁to', '▁re', 'p', 'lan', '▁the', '▁', 'sh', 'op', '▁', 'st', 'ock', ',', '▁and', '▁we', '▁', 'cho', 'se', '▁to', '▁go', '▁with', '▁the', '▁c', 'olo', 'red', '▁', 'ones', '▁that', '▁look', '▁', 'cu', 'te', '.', '</s>']
 ```
 
-可以看到，由于中文分词器无法识别大部分的英文单词，用它编码英文会生成更多的 token，例如这里将“order”切分为了“or”和“der”，将“chicks”切分为了“ch”、“ick”、“s”等等。
+可以看到，由于中文分词器无法很好地识别英文单词，用它编码英文文本会生成更多的 token，例如这里将“order”切分为了“or”和“der”，将“chicks”切分为了“ch”、“ick”、“s”等等。
 
-对于翻译任务，标签序列就是目标语言的 token ID 序列。与[序列标注任务](/2022/03/18/transformers-note-6.html)类似，我们会在模型预测出的标签序列与答案标签序列之间计算损失来调整模型参数，因此我们同样需要将填充的 pad 字符设置为 -100，以便在使用交叉熵计算序列损失时将它们忽略：
+对于翻译任务，标签序列就是目标语言的 token ID 序列。与[序列标注任务](/2022/03/18/transformers-note-6.html)类似，我们会在预测标签序列与答案标签序列之间计算损失来调整模型参数，因此我们同样需要将填充的 pad 字符设置为 -100，以便在使用交叉熵计算序列损失时将它们忽略：
 
 ```python
 import torch
@@ -145,14 +144,13 @@ model_inputs = tokenizer(
     truncation=True,
     return_tensors="pt"
 )
-with tokenizer.as_target_tokenizer():
-    labels = tokenizer(
-        targets, 
-        padding=True, 
-        max_length=max_target_length, 
-        truncation=True,
-        return_tensors="pt"
-    )["input_ids"]
+labels = tokenizer(
+    text_target=targets, 
+    padding=True, 
+    max_length=max_target_length, 
+    truncation=True,
+    return_tensors="pt"
+)["input_ids"]
 
 end_token_index = torch.where(labels == tokenizer.eos_token_id)[1]
 for idx, end_idx in enumerate(end_token_index):
@@ -222,7 +220,7 @@ tensor([[  140,    21,   129,   717,     8,   278,   239, 53363,    14,     3,
 
 我们使用的 Marian 模型会在分词结果的结尾加上特殊 token `'</s>'`，因此这里通过 `tokenizer.eos_token_id` 定位其在 token ID 序列中的索引，然后将其之后的 pad 字符设置为 -100。
 
-> 标签序列的格式需要依据模型而定，例如如果你使用的是 T5 模型，模型的输入还需要包含指明任务类型的前缀 (prefix)，对于翻译任务就需要在输入前添加 `Chinese to English:`。
+> 标签序列的格式需要依据模型而定，例如如果你使用的是 T5 模型，模型的输入还需要包含指明任务类型的前缀 (prefix)，对于翻译任务就需要在输入前添加 `translate: Chinese to English:`。
 
 与我们之前任务中使用的纯 Encoder 模型不同，Seq2Seq 任务对应的模型采用的是 Encoder-Decoder 框架：Encoder 负责编码输入序列，Decoder 负责循环地逐个生成输出 token。因此，对于每一个样本，我们还需要额外准备 decoder input IDs 作为 Decoder 的输入。decoder input IDs 是标签序列的移位，在序列的开始位置增加了一个特殊的“序列起始符”。
 
@@ -237,8 +235,7 @@ import torch
 from torch.utils.data import DataLoader
 from transformers import AutoModelForSeq2SeqLM
 
-max_input_length = 128
-max_target_length = 128
+max_length = 128
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print(f'Using {device} device')
@@ -253,31 +250,25 @@ def collote_fn(batch_samples):
         batch_targets.append(sample['english'])
     batch_data = tokenizer(
         batch_inputs, 
+        text_target=batch_targets, 
         padding=True, 
-        max_length=max_input_length,
+        max_length=max_length,
         truncation=True, 
         return_tensors="pt"
     )
-    with tokenizer.as_target_tokenizer():
-        labels = tokenizer(
-            batch_targets, 
-            padding=True, 
-            max_length=max_target_length,
-            truncation=True, 
-            return_tensors="pt"
-        )["input_ids"]
-        batch_data['decoder_input_ids'] = model.prepare_decoder_input_ids_from_labels(labels)
-        end_token_index = torch.where(labels == tokenizer.eos_token_id)[1]
-        for idx, end_idx in enumerate(end_token_index):
-            labels[idx][end_idx+1:] = -100
-        batch_data['labels'] = labels
+    batch_data['decoder_input_ids'] = model.prepare_decoder_input_ids_from_labels(batch_data['labels'])
+    end_token_index = torch.where(batch_data['labels'] == tokenizer.eos_token_id)[1]
+    for idx, end_idx in enumerate(end_token_index):
+        batch_data['labels'][idx][end_idx+1:] = -100
     return batch_data
 
 train_dataloader = DataLoader(train_data, batch_size=32, shuffle=True, collate_fn=collote_fn)
 valid_dataloader = DataLoader(valid_data, batch_size=32, shuffle=False, collate_fn=collote_fn)
 ```
 
-注意，由于本文直接使用 Transformers 库自带的 `AutoModelForSeq2SeqLM` 函数来构建模型，因此我们将每一个 batch 中的数据处理为该模型可接受的格式：一个包含 `'attention_mask'`、`'input_ids'`、`'labels'` 和 `'decoder_input_ids'` 键的字典。
+注意，由于本文直接使用 Transformers 库自带的 `AutoModelForSeq2SeqLM` 函数来构建模型，因此我们需要将每一个 batch 中的数据处理为该模型可接受的格式：一个包含 `'input_ids'`、`'attention_mask'`、`'labels'` 和 `'decoder_input_ids'` 键的字典。
+
+正如前面所述，编码目标语言需要使用 `text_targets` 参数，因此需要调用两次分词器以分别处理源语言和目标语言。实际上分词器可以并行地处理源/目标语言，只需同时传入两种语言的序列，分词器就会自动在输出中以 `'labels'` 键返回目标语言的 token ID 序列。因此这里我们只调用了一次分词器就同时处理好了中文和英文序列。
 
 下面我们尝试打印出一个 batch 的数据，以验证是否处理正确：
 
@@ -622,7 +613,7 @@ def test_loop(dataloader, model):
             generated_tokens = model.generate(
                 batch_data["input_ids"],
                 attention_mask=batch_data["attention_mask"],
-                max_length=max_target_length,
+                max_length=max_length,
             ).cpu().numpy()
         label_tokens = batch_data["labels"].cpu().numpy()
         
@@ -632,9 +623,7 @@ def test_loop(dataloader, model):
 
         preds += [pred.strip() for pred in decoded_preds]
         labels += [[label.strip()] for label in decoded_labels]
-    bleu_score = bleu.corpus_score(preds, labels).score
-    print(f"BLEU: {bleu_score:>0.2f}\n")
-    return bleu_score
+    return bleu.corpus_score(preds, labels).score
 ```
 
 为了方便后续保存验证集上最好的模型，这里我们还在验证/测试循环中返回模型计算出的 BLEU 值。
@@ -663,6 +652,7 @@ for t in range(epoch_num):
     print(f"Epoch {t+1}/{epoch_num}\n-------------------------------")
     total_loss = train_loop(train_dataloader, model, optimizer, lr_scheduler, t+1, total_loss)
     valid_bleu = test_loop(valid_dataloader, model, mode='Valid')
+    print(f"BLEU: {valid_bleu:>0.2f}\n")
     if valid_bleu > best_bleu:
         best_bleu = valid_bleu
         print('saving new weights...\n')
@@ -718,8 +708,7 @@ max_dataset_size = 220000
 train_set_size = 200000
 valid_set_size = 20000
 
-max_input_length = 128
-max_target_length = 128
+max_length = 128
 
 batch_size = 32
 learning_rate = 1e-5
@@ -761,24 +750,16 @@ def collote_fn(batch_samples):
         batch_targets.append(sample['english'])
     batch_data = tokenizer(
         batch_inputs, 
+        text_target=batch_targets, 
         padding=True, 
-        max_length=max_input_length,
+        max_length=max_length,
         truncation=True, 
         return_tensors="pt"
     )
-    with tokenizer.as_target_tokenizer():
-        labels = tokenizer(
-            batch_targets, 
-            padding=True, 
-            max_length=max_target_length,
-            truncation=True, 
-            return_tensors="pt"
-        )["input_ids"]
-        batch_data['decoder_input_ids'] = model.prepare_decoder_input_ids_from_labels(labels)
-        end_token_index = torch.where(labels == tokenizer.eos_token_id)[1]
-        for idx, end_idx in enumerate(end_token_index):
-            labels[idx][end_idx+1:] = -100
-        batch_data['labels'] = labels
+    batch_data['decoder_input_ids'] = model.prepare_decoder_input_ids_from_labels(batch_data['labels'])
+    end_token_index = torch.where(batch_data['labels'] == tokenizer.eos_token_id)[1]
+    for idx, end_idx in enumerate(end_token_index):
+        batch_data['labels'][idx][end_idx+1:] = -100
     return batch_data
 
 train_dataloader = DataLoader(train_data, batch_size=batch_size, shuffle=True, collate_fn=collote_fn)
@@ -818,7 +799,7 @@ def test_loop(dataloader, model):
             generated_tokens = model.generate(
                 batch_data["input_ids"],
                 attention_mask=batch_data["attention_mask"],
-                max_length=max_target_length,
+                max_length=max_length,
             ).cpu().numpy()
         label_tokens = batch_data["labels"].cpu().numpy()
         
@@ -828,9 +809,7 @@ def test_loop(dataloader, model):
 
         preds += [pred.strip() for pred in decoded_preds]
         labels += [[label.strip()] for label in decoded_labels]
-    bleu_score = bleu.corpus_score(preds, labels).score
-    print(f"BLEU: {bleu_score:>0.2f}\n")
-    return bleu_score
+    return bleu.corpus_score(preds, labels).score
 
 optimizer = AdamW(model.parameters(), lr=learning_rate)
 lr_scheduler = get_scheduler(
@@ -846,6 +825,7 @@ for t in range(epoch_num):
     print(f"Epoch {t+1}/{epoch_num}\n-------------------------------")
     total_loss = train_loop(train_dataloader, model, optimizer, lr_scheduler, t+1, total_loss)
     valid_bleu = test_loop(valid_dataloader, model)
+    print(f"BLEU: {valid_bleu:>0.2f}\n")
     if valid_bleu > best_bleu:
         best_bleu = valid_bleu
         print('saving new weights...\n')
@@ -912,7 +892,7 @@ with torch.no_grad():
         generated_tokens = model.generate(
             batch_data["input_ids"],
             attention_mask=batch_data["attention_mask"],
-            max_length=max_target_length,
+            max_length=max_length,
         ).cpu().numpy()
         label_tokens = batch_data["labels"].cpu().numpy()
 
@@ -1324,7 +1304,7 @@ The family is just beginning to see
 
 运行 *run_translation_marian.sh* 脚本即可进行训练。如果要进行测试或者将模型输出的翻译结果保存到文件，只需把脚本中的 `--do_train` 改成 `--do_test` 或 `--do_predict`。
 
-> 经过 3 轮训练，最终 Marian 模型在测试集上的 BLEU 值为 54.87%（Nvidia Tesla V100, batch=32）。
+> 经过 3 轮训练，最终 Marian 模型在测试集上的 BLEU 值为 52.96%（Nvidia Tesla V100, batch=32）。
 
 ## 参考
 

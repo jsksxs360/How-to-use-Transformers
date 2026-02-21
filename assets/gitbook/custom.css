@@ -21,6 +21,14 @@
     min-height: calc(100% - 50px);
 }
 
+@media (max-width: 1240px) {
+    .book-body .body-inner {
+        position: absolute;
+        margin-top: 50px;
+        min-height: calc(100% - 50px)
+    }
+}
+
 .book-body .body-inner .page-wrapper {
     min-height: calc(100% - 46px);
 }
@@ -33,6 +41,11 @@
     .book-body .body-inner .navigation {
         max-width: calc(50% - 3px);
         width: calc(50% - 3px);
+    }
+
+    .book.with-summary .book-body .book-header {
+        overflow-x: hidden;
+        overflow-y: hidden;
     }
 }
 
@@ -49,11 +62,11 @@
 }
 
 .page-inner {
-    max-width: {{ site.page_width | default: '900px' }};
+    max-width: {{ site.page_width | default: '800px' }};
 }
 
 .back-to-top {
-    right: calc((100% - 300px - min(100% - 300px, {{ site.page_width | default: '900px' }})) / 2 + 25px);
+    right: calc((100% - 300px - min(100% - 300px, {{ site.page_width | default: '800px' }})) / 2 + 25px);
 }
 
 /* scrollbar */
@@ -164,30 +177,22 @@
     background-color: var(--c-tip-bg);
     color: var(--c-tip-text);
     font-family: var(--font-family);
+    padding: 10px;
 }
 
-.markdown-section blockquote.block-tip h1 {
-    color: var(--c-tip-title);
-}
-
-.markdown-section blockquote.block-tip h2 {
-    color: var(--c-tip-title);
-}
-
-.markdown-section blockquote.block-tip h3 {
-    color: var(--c-tip-title);
-}
-
-.markdown-section blockquote.block-tip h4 {
-    color: var(--c-tip-title);
-}
-
-.markdown-section blockquote.block-tip h5 {
-    color: var(--c-tip-title);
-}
-
+.markdown-section blockquote.block-tip h1,
+.markdown-section blockquote.block-tip h2,
+.markdown-section blockquote.block-tip h3,
+.markdown-section blockquote.block-tip h4,
+.markdown-section blockquote.block-tip h5,
 .markdown-section blockquote.block-tip h6 {
     color: var(--c-tip-title);
+    margin: 0px;
+    margin-bottom: 5px;
+}
+
+.markdown-section blockquote.block-tip p {
+    margin-bottom: 0px;
 }
 
 .markdown-section blockquote.block-warning {
@@ -195,30 +200,22 @@
     background-color: var(--c-warning-bg);
     color: var(--c-warning-text);
     font-family: var(--font-family);
+    padding: 10px;
 }
 
-.markdown-section blockquote.block-warning h1 {
-    color: var(--c-warning-title);
-}
-
-.markdown-section blockquote.block-warning h2 {
-    color: var(--c-warning-title);
-}
-
-.markdown-section blockquote.block-warning h3 {
-    color: var(--c-warning-title);
-}
-
-.markdown-section blockquote.block-warning h4 {
-    color: var(--c-warning-title);
-}
-
-.markdown-section blockquote.block-warning h5 {
-    color: var(--c-warning-title);
-}
-
+.markdown-section blockquote.block-warning h1,
+.markdown-section blockquote.block-warning h2,
+.markdown-section blockquote.block-warning h3,
+.markdown-section blockquote.block-warning h4,
+.markdown-section blockquote.block-warning h5,
 .markdown-section blockquote.block-warning h6 {
     color: var(--c-warning-title);
+    margin: 0px;
+    margin-bottom: 5px;
+}
+
+.markdown-section blockquote.block-warning p {
+    margin-bottom: 0px;
 }
 
 .markdown-section blockquote.block-danger {
@@ -226,30 +223,27 @@
     background-color: var(--c-danger-bg);
     color: var(--c-danger-text);
     font-family: var(--font-family);
+    padding: 10px;
 }
 
-.markdown-section blockquote.block-danger h1 {
-    color: var(--c-danger-title);
-}
-
-.markdown-section blockquote.block-danger h2 {
-    color: var(--c-danger-title);
-}
-
-.markdown-section blockquote.block-danger h3 {
-    color: var(--c-danger-title);
-}
-
-.markdown-section blockquote.block-danger h4 {
-    color: var(--c-danger-title);
-}
-
-.markdown-section blockquote.block-danger h5 {
-    color: var(--c-danger-title);
-}
-
+.markdown-section blockquote.block-danger h1,
+.markdown-section blockquote.block-danger h2,
+.markdown-section blockquote.block-danger h3,
+.markdown-section blockquote.block-danger h4,
+.markdown-section blockquote.block-danger h5,
 .markdown-section blockquote.block-danger h6 {
     color: var(--c-danger-title);
+    margin: 0px;
+    margin-bottom: 5px;
+}
+
+.markdown-section blockquote.block-danger p {
+    margin-bottom: 0px;
+}
+
+pre:has(code.language-mermaid[data-processed="true"]) {
+    background-color: #ffffff;
+    text-align: center;
 }
 
 :root {

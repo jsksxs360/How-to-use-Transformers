@@ -125,7 +125,7 @@
         {% capture anchorBody %}{% if include.sanitize %}{{ header | strip_html }}{% else %}{{ header }}{% endif %}{% endcapture %}
 
         {% if htmlID %}
-            {% capture anchorAttributes %} href="{% if baseURL %}{{ baseURL }}{% endif %}#{{ htmlID }}"{% endcapture %}
+            {% capture anchorAttributes %} href="{% if baseURL %}{{ baseURL }}{% endif %}#{{ htmlID }}" onclick="mobilePageScrollToAnchor(this)" {% endcapture %}
 
             {% if include.anchor_class %}
                 {% capture anchorAttributes %}{{ anchorAttributes }} class="{{ include.anchor_class | split: '.' | join: ' ' }}"{% endcapture %}

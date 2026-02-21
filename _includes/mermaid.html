@@ -1,0 +1,30 @@
+<script>
+    function render_mermaid() {
+        mermaid.initialize({
+            startOnLoad: false,
+            theme: "default",
+        });
+        window.mermaid.init(undefined, document.querySelectorAll('.language-mermaid'));
+    }
+
+    function initialize_mermaid() {
+        if (document.readyState === "loading") {
+            // Loading hasn't finished yet
+            document.addEventListener("DOMContentLoaded", render_mermaid);
+        } else {
+            // `DOMContentLoaded` has already fired
+            render_mermaid();
+        }
+    }
+
+    if (window.mermaid_script && window.mermaid) {
+        initialize_mermaid();
+    } else {
+        window.mermaid_script = document.createElement("script");
+        mermaid_script.onload = initialize_mermaid;
+        document.head.appendChild(mermaid_script);
+        mermaid_script.defer = true;
+        mermaid_script.id = 'mermaid-script';
+        mermaid_script.src = 'https://unpkg.com/mermaid@10.4.0/dist/mermaid.min.js';
+    }
+</script>

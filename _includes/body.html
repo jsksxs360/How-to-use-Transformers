@@ -19,6 +19,10 @@
                     {% endif %}
 
                     {{ content }}
+
+                    {%- if jekyll.environment != 'dev' and site.disqushandler -%}
+                        {%- include disqus.html -%}
+                    {%- endif -%}
                 </section>
             </div>
 
@@ -27,4 +31,13 @@
     </div>
 </div>
 
+<!-- introduce mathjax support -->
 {% include mathjax.html %}
+
+<!-- introduce per-page mermaid support -->
+{% if page.mermaid %}
+    {% include mermaid.html %}
+{% endif %}
+
+<!-- introduce mathjax support -->
+{% include fixes-chrome-anchors.html %}

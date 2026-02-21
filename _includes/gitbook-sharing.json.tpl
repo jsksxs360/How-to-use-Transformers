@@ -1,13 +1,28 @@
             "sharing": {
-                "all": ["twitter", "weibo"],
-                "facebook": false,
+                "facebook": true,
+
                 "google": false,
+
                 "github": true,
-                "github_link": "https://github.com/jsksxs360/How-to-use-Transformers",
+              {% if site.github_username %}
+                "github_link": "https://github.com/{{ site.github_username }}",
+              {% else %}
+                "github_link": "https://github.com",
+              {% endif %}
+
                 "telegram": false,
                 "telegram_link": "https://t.me",
+
                 "instapaper": false,
-                "twitter": false,
+
+                "twitter": true,
+              {% if site.twitter_username %}
+                "twitter_link": "https://twitter.com/{{ site.twitter_username }}",
+              {% endif %}
+
                 "vk": false,
-                "weibo": false
+
+                "weibo": false,
+
+                "all": ["facebook", "google", "twitter", "weibo", "instapaper", "github", "telegram"]
             },

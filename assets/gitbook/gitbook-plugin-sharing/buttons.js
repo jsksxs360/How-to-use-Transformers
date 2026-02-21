@@ -96,17 +96,13 @@ require(['gitbook', 'jquery'], function(gitbook, $) {
             if (!opts[sideId]) return;
 
             var onClick = site.onClick;
-
-            if (sideId === "github" && opts["github_link"] !== undefined && opts["github_link"] !== "") {
+            
+            // override target link with provided link
+            var side_link = opts[`${sideId}_link`]
+            if (side_link !== undefined && side_link !== "") {
                 onClick = function(e) {
                     e.preventDefault();
-                    window.open(opts["github_link"]);
-                }
-            }
-            if (sideId === "telegram" && opts["telegram_link"] !== undefined && opts["telegram_link"] !== "") {
-                onClick = function(e) {
-                    e.preventDefault();
-                    window.open(opts["telegram_link"]);
+                    window.open(side_link);
                 }
             }
 

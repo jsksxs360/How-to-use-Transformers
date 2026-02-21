@@ -9,6 +9,9 @@
             "website": "styles/website.css"
         },
         "pluginsConfig": {
+            "expandable-chapter-small2": {
+                "articlesExpand": true,
+            },
             "fontsettings": {
                 "family": "sans",
                 "size": 2,
@@ -34,7 +37,7 @@
                     "print": "styles/print.css",
                     "website": "styles/website.css"
                 }
-            }
+            },
         },
         "theme": "default",
         "author": "Tao He",

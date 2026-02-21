@@ -37,11 +37,15 @@ kramdown:
     guess_lang:           true
 
 syntax_highlighter_style: github
+# syntax_highlighter_style: colorful
 
 markdown_ext:     markdown,mkdown,mkdn,mkd,md
 
 # Permalinks
 permalink:        /:categories/:year-:month-:day-:title:output_ext
+
+# Disqus comments
+# disqushandler:            sighingnow
 
 exclude:
   - _drafts
@@ -59,6 +63,16 @@ collections:
   c4:
     output: true
     permalink: /:collection/:path/
+  appendix:
+    output: true
+    permalink: /:collection/:path/
+
+ordered_collections:
+  - c1
+  - c2
+  - c3
+  - c4
+  - appendix
 
 page_width: 900px
 

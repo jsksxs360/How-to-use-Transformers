@@ -74,7 +74,7 @@ ordered_collections:
   - c4
   - appendix
 
-page_width: 900px
+page_width: 800px
 
 destination:      ./_site
 incremental:      false

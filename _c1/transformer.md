@@ -118,7 +118,7 @@ GPT 和 BERT 被提出之后，NLP 领域出现了越来越多基于 Transformer
 
 ### 2.3.1 Transformer 组成
 
-标准 Transformer 模型主要由左边的编码器（Encoder）和右边的解码器（Decoder）两个模块组成，如图 2-8 所示。其中编码器负责接收输入并构建输入的语义表示（语义特征），从而理解输入内容，而解码器则利用编码器输出的语义表示（语义特征）以及其他输入来生成目标序列。
+标准 Transformer 模型主要由左边的编码器（Encoder）和右边的解码器（Decoder）两个模块组成，如图 2-8 所示。其中编码器负责接收输入并构建输入的语义表示（语义特征），从而理解输入内容，而解码器则利用编码器输出的语义表示（语义特征）以及前序输出来生成目标序列。
 
 <img src="/assets/img/transformers/transformers_blocks.svg" alt="transformers_blocks" style="display: block; margin: auto; width: 700px">
 
